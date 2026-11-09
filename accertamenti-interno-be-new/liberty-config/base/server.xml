@@ -1,0 +1,51 @@
+<server description="Sogei Server Template">
+
+    <featureManager>
+        <feature>appSecurity-5.0</feature>
+        <feature>beanValidation-3.0</feature>
+        <feature>localConnector-1.0</feature>
+        <feature>microProfile-6.0</feature>
+        <feature>jakartaee-10.0</feature>
+        <feature>persistence-3.1</feature>
+    </featureManager>
+
+    <include location="resources/config/logging.xml" optional="true"/>
+    <include location="resources/config/registry.xml" optional="true"/>
+    <include location="resources/config/database.xml" optional="true"/>
+    <include location="resources/config/libraries.xml"/>
+    <include location="resources/config/ssl.xml"/>
+
+    <httpEndpoint id="defaultHttpEndpoint" host="localhost" httpPort="9080"/>
+
+    <mpMetrics authentication="false"/>
+
+    <managedThreadFactory jndiName="concurrent/threadFactory">
+        <contextService>
+            <jeeMetadataContext/>
+            <securityContext/>
+            <classloaderContext/>
+            <baseContext/>
+        </contextService>
+    </managedThreadFactory>
+
+    <webApplication id="Accertamenti" location="Accertamenti.war"
+                    name="Accertamenti" context-root="Accertamenti">
+		
+        <classloader commonLibraryRef="Libraries"/>
+        <application-bnd>
+            <security-role name="USERS_ROLE">
+                <group name="USERS_GROUP"/>
+            </security-role>
+            <security-role name="ADMIN_ROLE">
+                <group name="ADMIN_GROUP"/>
+            </security-role>
+            <security-role name="ALL_AUTHENTICATED_ROLE">
+                <special-subject type="ALL_AUTHENTICATED_USERS"/>
+            </security-role>
+        </application-bnd>
+    </webApplication>
+	
+	<jndiEntry jndiName="propertiesFilePath" value="${env.PROPERTIES_LOCATION}"/>
+    <jndiEntry jndiName="exportPropertiesFilePath" value="${env.EXPORT_PROPERTIES_LOCATION}" />
+
+</server>

@@ -1,0 +1,28 @@
+<server>
+
+    <!--For a user registry configuration, configure your user registry. For
+        example, configure a basic user registry using the basicRegistry element.
+        Specify your own user name below in the name attribute of the user element.
+        For the password, generate an encoded password using bin/securityUtility
+        encode and add it in the password attribute of the user element. Then uncomment
+        the user element. -->
+
+    <!-- il registro base viene utilizzato in ambiente di sviluppo senza bisogno
+        di configurare l'ldap, possono essere aggiunti altri utenti e altri ruoli. -->
+
+    <basicRegistry id="basic" realm="BasicRealm">
+        <user password="${env.USER_1_PSW}" name="${env.USER_1}"
+              id="user.user1"/>
+        <user password="${env.USER_2_PSW}" name="${env.USER_2}"
+              id="user.user2"/>
+        <user password="${env.USER_3_PSW}" name="${env.USER_3}"
+              id="user.user3"/>
+        <group name="${env.GROUP_1_NAME}" id="group.group1">
+            <member name="${env.USER_1}" id="group.user1"/>
+        </group>
+        <group name="${env.GROUP_2_NAME}" id="group.group2">
+            <member name="${env.USER_2}" id="group.user2"/>
+        </group>
+    </basicRegistry>
+
+</server>

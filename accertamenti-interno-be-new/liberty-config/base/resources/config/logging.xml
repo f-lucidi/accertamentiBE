@@ -1,0 +1,12 @@
+<server>
+
+    <logging maxFiles="10"
+             traceSpecification="*=info:it.sogei.tabacchi.*=finest:it.sogei.psi.*=finest:eclipselink.sql=all"
+             messageFormat="SIMPLE"
+             messageSource="message,trace,accessLog,ffdc,audit"
+             consoleLogLevel="INFO"
+             logDirectory="${server.config.dir}/logs">
+        <log filename="${server.config.dir}/logs/messages.log"/>
+    </logging>
+
+</server>

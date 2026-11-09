@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	
+	<parent>
+		<groupId>it.sogei.architecture.parent</groupId>
+		<artifactId>sogei-liberty</artifactId>
+		<version>1.0.2</version>
+	</parent>
+	
+	<groupId>it.sogei.tabacchi</groupId>
+	<artifactId>Accertamenti</artifactId>
+	<version>${revision}</version>
+	<packaging>war</packaging>
+	
+	<name>Microprofile Sogei Archetype</name>
+	
+	<licenses>
+		<license>
+			<name>The MIT License</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+			<comments>A business-friendly OSS license</comments>
+		</license>
+	</licenses>
+	
+	<properties>
+		<revision>0.0.1</revision>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
+		<!-- war configuration -->
+		<failOnMissingWebXml>false</failOnMissingWebXml>
+		<packagingExcludes>pom.xml</packagingExcludes>
+		
+		<!-- OVERWRITTEN PROPERTIES -->
+		
+		<!-- define artifact type -->
+		<artifact.type>project</artifact.type>
+		
+		<!-- configure properties of liberty by overriding them from parent pom -->
+		<liberty.server.name>Liberty-Sogei</liberty.server.name>
+		<sogei.architecture.bom.version>1.0.0</sogei.architecture.bom.version>
+		
+		<!-- FRAMEWORK VERSIONS -->
+		<framework.jakarta>10.0.0</framework.jakarta>
+		<framework.microprofile>6.0</framework.microprofile>
+		
+		<!-- SERVER VERSIONS -->
+		<liberty.server.version>24.0.0.12</liberty.server.version>
+		
+		<!-- PLUGIN VERSIONS -->
+		<plugin.version.liberty>3.10.3</plugin.version.liberty>
+		<plugin.version.resources>3.3.1</plugin.version.resources>
+		
+		<!-- LIBRARY VERSIONS -->
+		<lib.org.projectlombok.version>1.18.30</lib.org.projectlombok.version>
+		<lib.lombok.mapstruct.version>0.2.0</lib.lombok.mapstruct.version>
+		<lib.mapstruct.version>1.5.5.Final</lib.mapstruct.version>
+		<lib.org.slf4j.version>1.7.25</lib.org.slf4j.version>
+		<lib.com.oracle.jdbc.version>12.2.0.1</lib.com.oracle.jdbc.version>
+		<lib.version.eclipselink-jpa-modelgen>4.0.4</lib.version.eclipselink-jpa-modelgen>
+		<lib.commons.lang3.version>3.18.0</lib.commons.lang3.version>
+		<lib.commons.io.version>2.14.0</lib.commons.io.version>
+		<lib.version.gson>2.13.1</lib.version.gson>
+		<lib.version.apache.http>4.5.13</lib.version.apache.http>
+		<lib.apache.poi.version>5.2.5</lib.apache.poi.version>
+		<lib.apache.poi-ooxml.version>5.2.5</lib.apache.poi-ooxml.version>
+		<lib.version.api-sicurezza>2.1.0-SNAPSHOT</lib.version.api-sicurezza>
+		<lib.version.clientRest>3.0.0-SNAPSHOT</lib.version.clientRest>
+		<lib.version.versamentiF24Service>0.1.0-SNAPSHOT</lib.version.versamentiF24Service>
+		
+		<!-- SECURITY -->
+		<folder.api-sicurezza>api-sicurezza-rest</folder.api-sicurezza>
+	</properties>
+	
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<!-- filtering exclusions -->
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>${plugin.version.resources}</version>
+				<configuration>
+					<nonFilteredFileExtensions>
+						<nonFilteredFileExtension>p12</nonFilteredFileExtension>
+						<nonFilteredFileExtension>pfx</nonFilteredFileExtension>
+						<nonFilteredFileExtension>jar</nonFilteredFileExtension>
+					</nonFilteredFileExtensions>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>it.sogei.architecture.bom</groupId>
+				<artifactId>sogei-test</artifactId>
+				<version>${sogei.architecture.bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>it.sogei.architecture.bom</groupId>
+				<artifactId>sogei-systems</artifactId>
+				<version>${sogei.architecture.bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
+	<dependencies>
+		<!-- Provided framework dependencies -->
+		<dependency>
+			<groupId>jakarta.platform</groupId>
+			<artifactId>jakarta.jakartaee-api</artifactId>
+			<version>${framework.jakarta}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.microprofile</groupId>
+			<artifactId>microprofile</artifactId>
+			<version>${framework.microprofile}</version>
+			<type>pom</type>
+			<scope>provided</scope>
+		</dependency>
+		
+		<!-- utility dependencies -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lib.org.projectlombok.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok-mapstruct-binding</artifactId>
+			<version>${lib.lombok.mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct-processor</artifactId>
+			<version>${lib.mapstruct.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${lib.mapstruct.version}</version>
+		</dependency>
+		
+		<!-- slf4j api and implementation-->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${lib.org.slf4j.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-jdk14</artifactId>
+			<version>${lib.org.slf4j.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<!-- external dependencies -->
+		<dependency>
+			<groupId>com.oracle.jdbc</groupId>
+			<artifactId>ojdbc8</artifactId>
+			<version>${lib.com.oracle.jdbc.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${lib.commons.io.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>${lib.commons.lang3.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${lib.version.gson}</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>${lib.version.apache.http}</version>
+		</dependency>
+		
+<!--		<dependency>-->
+<!--			<groupId>org.apache.poi</groupId>-->
+<!--			<artifactId>poi</artifactId>-->
+<!--			<version>${lib.apache.poi.version}</version>-->
+<!--		</dependency>-->
+		
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-ooxml</artifactId>
+			<version>${lib.apache.poi-ooxml.version}</version>
+		</dependency>
+		
+		
+		<!-- provide autogeneration of jpa metamodel classes -->
+		<dependency>
+			<groupId>org.eclipse.persistence</groupId>
+			<artifactId>org.eclipse.persistence.jpa.modelgen.processor</artifactId>
+			<version>${lib.version.eclipselink-jpa-modelgen}</version>
+		</dependency>
+		
+		<!-- security (Dependency da rimettere provided per deploy in test)-->
+		<dependency>
+			<groupId>it.sogei.accise.DOG-SA-0052.ServiziInterniAccise</groupId>
+			<artifactId>api-sicurezza-rest</artifactId>
+			<version>${lib.version.api-sicurezza}</version>
+<!--			 <scope>provided</scope> -->
+		</dependency>
+		<dependency>
+			<groupId>it.sogei.accise.DOG-SA-0052.ServiziInterniAccise</groupId>
+			<artifactId>api-sicurezza-rest-wlp-jakarta17</artifactId>
+			<version>${lib.version.api-sicurezza}</version>
+<!--			<scope>provided</scope>-->
+		</dependency>
+		<dependency>
+			<groupId>it.sogei.doaacc.liberty</groupId>
+			<artifactId>clientRest</artifactId>
+			<version>${lib.version.clientRest}</version>
+<!--			<scope>provided</scope>-->
+		</dependency>
+		<dependency>
+			<groupId>it.sogei.versamenti</groupId>
+			<artifactId>VersamentiF24Service</artifactId>
+			<version>${lib.version.versamentiF24Service}</version>
+			<scope>provided</scope>
+		</dependency>
+		
+	</dependencies>
+	
+	<profiles>
+		<profile>
+			<id>local</id>
+			
+			<activation>
+				<activeByDefault>true</activeByDefault>
+				<property>
+					<name>!release</name>
+				</property>
+			</activation>
+			
+			<build>
+				<plugins>
+					<!-- Copy driver library -->
+					<plugin>
+						<groupId>io.openliberty.tools</groupId>
+						<artifactId>liberty-maven-plugin</artifactId>
+						<version>${plugin.version.liberty}</version>
+						<configuration>
+							<copyDependencies>
+								<dependencyGroup>
+									<location>lib/jdbc</location>
+									<stripVersion>true</stripVersion>
+									<dependency>
+										<groupId>com.oracle.jdbc</groupId>
+										<artifactId>ojdbc8</artifactId>
+									</dependency>
+								</dependencyGroup>
+								<dependencyGroup>
+									<location>lib/slf4j</location>
+									<stripVersion>true</stripVersion>
+									<dependency>
+										<groupId>org.slf4j</groupId>
+										<artifactId>slf4j-api</artifactId>
+									</dependency>
+									<dependency>
+										<groupId>org.slf4j</groupId>
+										<artifactId>slf4j-jdk14</artifactId>
+									</dependency>
+								</dependencyGroup>
+								<dependencyGroup>
+									<location>${folder.api-sicurezza}</location>
+									<dependency>
+										<groupId>it.sogei.doaacc.liberty</groupId>
+										<artifactId>*</artifactId>
+									</dependency>
+								</dependencyGroup>
+							</copyDependencies>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		
+		<profile>
+			<id>release</id>
+			
+			<activation>
+				<property>
+					<name>release</name>
+				</property>
+			</activation>
+			
+			<!--If target environment is traditional then comment the build section below.-->
+			
+			<build>
+				<plugins>
+					<!-- Copy driver library -->
+					<plugin>
+						<groupId>io.openliberty.tools</groupId>
+						<artifactId>liberty-maven-plugin</artifactId>
+						<version>${plugin.version.liberty}</version>
+						<configuration>
+							<copyDependencies>
+								<dependencyGroup>
+									<location>lib/jdbc</location>
+									<stripVersion>true</stripVersion>
+									<dependency>
+										<groupId>com.oracle.jdbc</groupId>
+										<artifactId>ojdbc8</artifactId>
+									</dependency>
+								</dependencyGroup>
+								<dependencyGroup>
+									<location>lib/slf4j</location>
+									<stripVersion>true</stripVersion>
+									<dependency>
+										<groupId>org.slf4j</groupId>
+										<artifactId>slf4j-api</artifactId>
+									</dependency>
+									<dependency>
+										<groupId>org.slf4j</groupId>
+										<artifactId>slf4j-jdk14</artifactId>
+									</dependency>
+								</dependencyGroup>
+							</copyDependencies>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+</project>

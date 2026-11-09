@@ -1,0 +1,10 @@
+<server>
+
+    <library id="Libraries"
+             name="Libraries for AccertamentiTabacchi-application">
+        <fileset dir="lib/slf4j" includes="*.jar" scanInterval="5s"/>
+        <fileset dir="lib/jdbc" includes="*.jar" scanInterval="5s"/>
+		<fileset dir="lib/api-sicurezza-rest" includes="*.jar" scanInterval="5s"/>
+    </library>
+
+</server>

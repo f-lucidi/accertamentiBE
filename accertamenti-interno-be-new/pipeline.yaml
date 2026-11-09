@@ -1,0 +1,83 @@
+# Wiki page: https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico
+
+# se è necessario un maggiore grado di libertà nell'impostazione della pipeline
+
+name: $(System.TeamProject)_$(Build.DefinitionName)_$(Build.SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+
+# definizione della risorsa con il repo dei template sogei
+resources:
+  repositories:
+    - repository: template_pipeline_catalog
+      type: git
+      name: DevOps-Tool/template-pipeline-catalog
+
+
+# triggering
+trigger: #mettere none per disabilitare il trigger automatico
+ - sviluppo/start #indicare i rami sui quali si vuole che scatti il trigger automatico
+
+# definizione del pool
+pool:
+  name: 'SOGEI-CLOUD'
+  demands:
+    - Agent.os -equals Linux
+
+# eventuali definizioni di parametri da usare nella pipeline
+# parameters:
+#   - name: profilo
+#    default: develop
+#    values:
+#    - produzione
+#    - validazione
+#    - develop
+# stage di compilazione e build con template java
+stages:
+  - stage: JAVA_BUILD
+    jobs:
+      - job: JAVA_JOB
+        workspace:
+          clean: all
+        steps:
+          - checkout: self
+            fetchDepth: 0
+          - template: language_template/java_template.yaml@template_pipeline_catalog
+            parameters:
+              areaName: accertamenti
+              servizioICT: AMS-SA-0124
+              codiceApplicazione: FU_010
+
+              # MAVEN PARAMETERS
+              # se è necessario specificare parametri diversi per il task maven fare riferimento a quelli possibili nella guida
+              # https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico?anchor=maven
+              mavenOptions: '-Donly-build'
+              mavenJdkVersion: '17'
+              
+              # PUBBLICAZIONE ARTEFATTO
+              # se è necessario pubblicare l'artefatto nel report della pipeline in modo che sia scaricabile fare riferimento alla guida:
+              # https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico?anchor=pubblicazione-artefatto
+
+              # ANALISI STATICA (SONARQUBE)
+              # se è necessario modificare i parametri per l'analisi statica con sanarqubne rispetto a quelli di default fere riferimento alla guida:
+              # https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico?anchor=analisi-statica
+
+              sonarqubeTemplateVersion: 2.0
+              sonarqubeEndpoint: sonarqube_2.0
+
+              # ANALISI SICUREZZA (CHECKMARX)
+              # se è necessario specificare parametri differenti per l'analisi di sicurezza con checkmarx rispetto a quelli di default fare riferimento alla guida:
+              # https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico?anchor=analisi-statica
+              checkmarxSyncMode: false
+
+              # BAKE IMMAGINE (S2I o dockerfile)
+              # se è necessario effettuare il bake dell'immagine secondo la modalità prescelta e con parametri diversi da quelli di default fare riferimento alla guida:
+              #https://dev.azure.com/SogeiReferenceCollection/ALM-DevOps_Hub/_wiki/wikis/ALM-DevOps_Hub.wiki/413/java_template_unico?anchor=creazione-immagine-docker
+              
+              ImageBakeType: none
+
+              # PUBBLICAZIONE ARTEFATTI (per renderli disponibili alla pipeline di release)
+              # Artifact Name
+              copyPublishArtifactName: 'Accertamenti'
+              # filtro sulla source folder
+              copyPublishContents: '**/*.war'
+              # Path To Publish
+              copyPublishSourceFolder: './target'

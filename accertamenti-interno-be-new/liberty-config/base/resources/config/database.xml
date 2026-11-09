@@ -1,0 +1,17 @@
+<server>
+
+    <library id="jdbcLib">
+        <fileset dir="${env.ORACLE_DRIVER_LOCATION}" includes="*.jar"/>
+    </library>
+
+    <dataSource id="AccertamentiTabacchi"
+                jdbcDriverRef="OracleDriver" jndiName="jdbc/connection"
+                transactional="true" type="javax.sql.DataSource">
+        <jdbcDriver id="OracleDriver" libraryRef="jdbcLib"/>
+        <properties.oracle URL="${env.ORA_CONN_URL}"
+                           user="${env.ORA_CONN_USER}" password="${env.ORA_CONN_PSW}"/>
+        <connectionManager maxPoolSize="${env.ORA_ID_CONN_MAXPOOL}" minPoolSize="${env.ORA_ID_CONN_MINPOOL}"
+                           connectionTimeout="${env.ORA_ID_CONN_TIMEOUT}"/>
+    </dataSource>
+
+</server>
