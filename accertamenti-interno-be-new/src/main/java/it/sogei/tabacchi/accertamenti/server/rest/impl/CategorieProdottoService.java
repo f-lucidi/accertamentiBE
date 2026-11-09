@@ -23,7 +23,7 @@ public class CategorieProdottoService extends AbstractService implements ICatego
     }
 
     @Override
-    public Response getAllCategorieProdotto() {
-        return ok(categoriaProdottoController.getAllCategorieProdotto());
+    public Response getAllCategorieProdotto(String sigla, String descrizione) {
+        return ok(categoriaProdottoController.getAllCategorieProdotto(sigla, descrizione));
     }
 }

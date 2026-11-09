@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface ICategoriaProdottoDao {
     WTBAccertamentiCategorieProd findCategoriaBySigla(String siglaCategoria);
-    List<WTBAccertamentiCategorieProd> findAllCategorieProdotto();
+    List<WTBAccertamentiCategorieProd> findAllCategorieProdotto(String sigla, String descrizione);
 }

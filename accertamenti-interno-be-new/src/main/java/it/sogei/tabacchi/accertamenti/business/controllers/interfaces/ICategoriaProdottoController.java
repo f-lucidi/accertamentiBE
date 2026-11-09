@@ -7,5 +7,5 @@ import java.util.List;
 public interface ICategoriaProdottoController {
 
     String getDescrizioneCategoria(String siglaCategoria);
-    List <WTBAccertamentiCategorieProd> getAllCategorieProdotto();
+    List<WTBAccertamentiCategorieProd> getAllCategorieProdotto(String sigla, String descrizione);
 }

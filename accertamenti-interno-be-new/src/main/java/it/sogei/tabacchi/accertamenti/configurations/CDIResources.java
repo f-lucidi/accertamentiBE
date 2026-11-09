@@ -13,7 +13,9 @@ import java.util.ResourceBundle;
 @ApplicationScoped
 public class CDIResources {
 
-    @PersistenceContext(unitName = "primary")   // "server, qui mettimi un EntityManager della unit primary"
+    // tramite questa annotazione, Liberty (il server) inietta un oggetto EntityManager della unit primary in questo campo
+    // inizializzando una EntityManagerFactory e creando un EntityManager per ogni richiesta (request scope)
+    @PersistenceContext(unitName = "primary")
     private EntityManager entityManager;         // campo vuoto: non fai mai "new" né assegnazioni
 
     @Produces
