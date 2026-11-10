@@ -1,6 +1,8 @@
 package it.sogei.tabacchi.accertamenti.business.dao.interfaces;
 
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTbAccertamentiSoggettiV;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTbAccertamentiTipoPagamento;
 
 import java.util.List;
 
@@ -10,5 +12,7 @@ public interface IConsultazioneImposteDao {
 
     WTBAccertamentiCategorieProd findCategoriaBySigla(String siglaCategoria);
 
-    List<Integer> findAnniContabili(String categoriaProdotto);
+    List<WTbAccertamentiSoggettiV> findAllRagioneSocialeEPivaByCategoriaProdotto(String categoriaProdotto);
+
+    List<WTbAccertamentiTipoPagamento> findAllTipiPagamento();
 }

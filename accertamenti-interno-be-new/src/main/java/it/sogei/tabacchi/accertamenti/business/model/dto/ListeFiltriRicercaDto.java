@@ -8,7 +8,6 @@ import java.util.List;
 @Data
 public class ListeFiltriRicercaDto {
 
-    private List<AnniContabiliDto> listaAnniContabili;
     private List<RagioneSocialePIvaDto> listaRagioneSocialePIva;
     private List<TipoPagamentoDto> tipiPagamenti;
 }

@@ -49,7 +49,6 @@ public class Constants {
 
         public static final String SESSION_TIMEOUT = "SESSION_TIMEOUT";
         public static final String SESSION_EXPIRING = "SESSION_EXPIRING";
-        public static final String LIST_TIPO_PAGAMENTO = "LIST_TIPO_PAGAMENTO";
 
 
     }

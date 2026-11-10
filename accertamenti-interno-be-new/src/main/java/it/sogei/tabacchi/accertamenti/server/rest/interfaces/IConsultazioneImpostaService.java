@@ -52,7 +52,7 @@ public interface IConsultazioneImpostaService {
     @Path(Constants.Endpoint.FILTRI_RICERCA + "/{" + Constants.Parametri.CATEGORIA_PRODOTTO + "}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Liste per i filtri di ricerca di una categoria prodotto",
-            description = "Restituisce anni contabili, soggetti (ragione sociale e P.IVA) e tipi di pagamento.")
+            description = "Restituisce soggetti (ragione sociale e P.IVA) e tipi di pagamento.")
     @APIResponses({
             @APIResponse(responseCode = "200", description = "Liste per i filtri di ricerca",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
