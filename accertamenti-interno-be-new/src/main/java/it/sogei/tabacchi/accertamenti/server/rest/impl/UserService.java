@@ -4,6 +4,7 @@ import it.sogei.tabacchi.accertamenti.business.controllers.interfaces.IUserContr
 import it.sogei.tabacchi.accertamenti.business.model.dto.UserInfo;
 import it.sogei.tabacchi.accertamenti.server.filter.AuthenticationFilter;
 import it.sogei.tabacchi.accertamenti.server.filter.SkipAuthFilter;
+import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import it.sogei.tabacchi.accertamenti.server.rest.AbstractService;
 import it.sogei.tabacchi.accertamenti.server.rest.interfaces.IUserService;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Path(Constants.Endpoint.EMPTY)
 @RolesAllowed(Constants.Application.ROLES_ALLOWED)
 @Slf4j
+@LogMethodInvocation(logParameters = false)
 public class UserService extends AbstractService implements IUserService {
 
     @Inject

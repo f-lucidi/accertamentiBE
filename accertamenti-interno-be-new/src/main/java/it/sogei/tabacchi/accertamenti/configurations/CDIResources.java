@@ -13,13 +13,13 @@ import java.util.ResourceBundle;
 @ApplicationScoped
 public class CDIResources {
 
-    // tramite questa annotazione, Liberty (il server) inietta un oggetto EntityManager della unit primary in questo campo
-    // inizializzando una EntityManagerFactory e creando un EntityManager per ogni richiesta (request scope)
+    // Il container inietta un proxy thread-safe; l’EntityManager reale è associato alla transazione JTA in corso e viene chiuso alla sua fine.
     @PersistenceContext(unitName = "primary")
     private EntityManager entityManager;         // campo vuoto: non fai mai "new" né assegnazioni
 
     @Produces
     @ApplicationScoped
+    // "CDI, rendi disponibile quell'oggetto a chi fa @Inject"
     public EntityManager getEntityManager() {    // "CDI, rendi disponibile quell'oggetto a chi fa @Inject"
         return entityManager;
     }

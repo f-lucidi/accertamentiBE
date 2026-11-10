@@ -4,7 +4,11 @@ import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCateg
 
 import java.util.List;
 
-public interface ICategoriaProdottoDao {
+public interface IConsultazioneImposteDao {
+
+    List<WTBAccertamentiCategorieProd> findCategorieProdotti();
+
     WTBAccertamentiCategorieProd findCategoriaBySigla(String siglaCategoria);
-    List<WTBAccertamentiCategorieProd> findAllCategorieProdotto(String sigla, String descrizione);
+
+    List<Integer> findAnniContabili(String categoriaProdotto);
 }

@@ -15,6 +15,19 @@ public class Constants {
 
     }
 
+    public static class Parametri {
+
+        public static final String ID_POSIZIONE = "idPosizione";
+        public static final String ID_VERSAMENTO = "idVersamento";
+        public static final String CATEGORIA_PRODOTTO = "categoriaProdotto";
+        public static final String PAGINA = "pagina";
+        public static final String ANNO = "anno";
+        public static final String ELEMENTI_PER_PAGINA = "elementiPerPagina";
+        public static final String DEFAULT_PAGINA = "1";
+        public static final String DEFAULT_ELEMENTI_PER_PAGINA = "5";
+
+    }
+
     public static class Endpoint {
 
         public static final String EMPTY = "/";
@@ -26,15 +39,17 @@ public class Constants {
 
         /* Categorie Prodotto */
         public static final String CATEGORIE_PRODOTTO = "/categorie-prodotto";
+        /* Filtri Ricerca */
+        public static final String FILTRI_RICERCA = "/filtri-ricerca";
+        public static final String CONSULTAZIONE_IMPOSTE = "/consultazione-imposte";
     }
-
-
 
 
     public static class Properties {
 
         public static final String SESSION_TIMEOUT = "SESSION_TIMEOUT";
         public static final String SESSION_EXPIRING = "SESSION_EXPIRING";
+        public static final String LIST_TIPO_PAGAMENTO = "LIST_TIPO_PAGAMENTO";
 
 
     }
@@ -52,7 +67,6 @@ public class Constants {
     }
 
     public static class ParamKeys {
-
 
     }
 }

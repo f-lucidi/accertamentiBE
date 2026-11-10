@@ -4,6 +4,7 @@ package it.sogei.tabacchi.accertamenti.external.service.impl;
 import it.finanze.security.AuthRestJee7;
 import it.sogei.tabacchi.accertamenti.external.service.ICauController;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
+import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import jakarta.enterprise.context.Dependent;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Dependent
 @Slf4j
+@LogMethodInvocation(logParameters = false)
 public class CauController implements ICauController {
 
     @Override
