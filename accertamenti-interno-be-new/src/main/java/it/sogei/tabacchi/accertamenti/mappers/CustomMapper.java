@@ -1,12 +1,15 @@
 package it.sogei.tabacchi.accertamenti.mappers;
 
+import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RagioneSocialePIvaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.TipoPagamentoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTbAccertamentiSoggettiV;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTbAccertamentiTipoPagamento;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiSoggettiV;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
+import it.sogei.tabacchi.accertamenti.utility.Utility;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -18,7 +21,8 @@ import java.util.Objects;
         imports = {
                 LocalDate.class,
                 Objects.class,
-                Constants.class
+                Constants.class,
+                Utility.class
         }
 )
 public interface CustomMapper {
@@ -29,13 +33,30 @@ public interface CustomMapper {
 
     @Mapping(target = "partitaIva", source = "cfPiva")
     @Mapping(target = "ragioneSociale", source = "denominazione")
-    RagioneSocialePIvaDto toRagioneSocialePIvaDto(WTbAccertamentiSoggettiV soggetto);
+    RagioneSocialePIvaDto toRagioneSocialePIvaDto(WTBAccertamentiSoggettiV soggetto);
 
-    List<RagioneSocialePIvaDto> toRagioneSocialePIvaDto(List<WTbAccertamentiSoggettiV> soggetti);
+    List<RagioneSocialePIvaDto> toRagioneSocialePIvaDto(List<WTBAccertamentiSoggettiV> soggetti);
 
-    TipoPagamentoDto toTipoPagamentoDto(WTbAccertamentiTipoPagamento tipoPagamento);
+    TipoPagamentoDto toTipoPagamentoDto(WTBAccertamentiTipoPagamento tipoPagamento);
 
-    List<TipoPagamentoDto> toTipiPagamentoDto(List<WTbAccertamentiTipoPagamento> tipiPagamento);
+    List<TipoPagamentoDto> toTipiPagamentoDto(List<WTBAccertamentiTipoPagamento> tipiPagamento);
+
+    // importi "dovuti" della posizione; ragioneSociale, dataUltimoVersamento e interessiLegali
+    // stanno su altre tabelle: li valorizza il controller
+    @Mapping(target = "idPosizione", source = "id")
+    @Mapping(target = "partitaIva", source = "cfSogObbligato")
+    @Mapping(target = "periodoContabile",
+            expression = "java(Utility.formattaPeriodoContabile(posizione.getTipoPeriodo(), posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina()))")
+    @Mapping(target = "totaleImpostaDovuta", source = "impostaTotaleDovuto", defaultValue = "0")
+    @Mapping(target = "statoPosizione", source = "statoPagamento.descrizione")
+    @Mapping(target = "totaleImpostaVersata", source = "impostaTotalePagato", defaultValue = "0")
+    @Mapping(target = "indennitaMora", source = "moraTotaleDovuto", defaultValue = "0")
+    @Mapping(target = "interessiTardatoPagamento", source = "interesseTardatoPagamentoTotaleDovuto", defaultValue = "0")
+    @Mapping(target = "sanzione", source = "sanzioneTotaleDovuto", defaultValue = "0")
+    @Mapping(target = "ragioneSociale", ignore = true)
+    @Mapping(target = "dataUltimoVersamento", ignore = true)
+    @Mapping(target = "interessiLegali", ignore = true)
+    PosizioneDto toPosizioneDto(WTBAccertamentiElencoPosizioni posizione);
 
     /* ESEMPIO  */
 

@@ -5,6 +5,7 @@ import it.finanze.security.AuthRestJee7;
 import it.sogei.tabacchi.accertamenti.external.service.ICauController;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
+import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.Dependent;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +21,12 @@ public class CauController implements ICauController {
         try {
             String ufficio = authRestJee7.getCodiceUfficio(request);
             if (StringUtils.isBlank(ufficio)) {
-                throw new BusinessException("Ufficio utente non trovato");
+                throw new BusinessException(Constants.ErrorMessages.UFFICIO_UTENTE_NON_TROVATO);
             }
             return ufficio;
         } catch (Exception e) {
             log.error("Errore durante la chiamata getCodiceUfficio", e);
-            throw new BusinessException("Ufficio utente non trovato");
+            throw new BusinessException(Constants.ErrorMessages.UFFICIO_UTENTE_NON_TROVATO);
         }
     }
 

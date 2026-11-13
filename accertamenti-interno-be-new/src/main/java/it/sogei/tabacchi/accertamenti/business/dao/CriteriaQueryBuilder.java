@@ -252,8 +252,12 @@ public class CriteriaQueryBuilder<T> {
         return this.addCondition(root.get(attribute), CriteriaBuilder::isNotNull);
     }
 
+    // come le altre condizioni: con addConditionsWhenValueIsNull(false) una lista null viene saltata
     public <Y> CriteriaQueryBuilder<T> addInCondition(SingularAttribute<? super T, Y> attribute, List<Y> values) {
-        return this.addCondition(root.get(attribute), (cb, path) -> path.in(values));
+        if (addConditionsWhenValueIsNull || Objects.nonNull(values)) {
+            this.applyPredicate(root.get(attribute).in(values));
+        }
+        return this;
     }
 
     public <Y> CriteriaQueryBuilder<T> addNotEqualCondition(SingularAttribute<? super T, Y> attribute, Y value) {
@@ -285,6 +289,26 @@ public class CriteriaQueryBuilder<T> {
             Expression<String> dateFieldExtractor = cb.function("TO_CHAR", String.class, path, cb.literal(pattern));
             return criteriaCondition.apply(cb, dateFieldExtractor, String.valueOf(value));
         });
+    }
+    /**
+     * Aggiunge una condizione EXISTS con una subquery su un'altra entity, collegata alla query principale. <br>
+     * Un esempio di utilizzo: <br>
+     * <code>addExistsCondition(Figlio.class, (cb, padre, figlio) -> List.of(cb.equal(figlio.get(Figlio_.idPadre), padre.get(Padre_.id))))</code> <br>
+     * Il codice riportato genererebbe una condizione simile a: <br>
+     * <code>EXISTS (SELECT 1 FROM FIGLIO f WHERE f.ID_PADRE = p.ID)</code> <br>
+     * Va chiamato <b>dopo</b> gli eventuali select (es. {@link CriteriaQueryBuilder#selectCount()}), così la subquery viene creata sulla query corretta.
+     * @param subqueryClass entity su cui fare la subquery
+     * @param conditions funzione che riceve il CriteriaBuilder, il root principale e il root della subquery e ritorna le condizioni della subquery
+     * @return CriteriaQueryBuilder<T> con la condizione applicata
+     */
+    public <S> CriteriaQueryBuilder<T> addExistsCondition(Class<S> subqueryClass, TriFunction<CriteriaBuilder, Root<T>, Root<S>, List<Predicate>> conditions) {
+        Subquery<Integer> subquery = criteriaQuery.subquery(Integer.class);
+        Root<S> subqueryRoot = subquery.from(subqueryClass);
+
+        List<Predicate> predicates = conditions.apply(criteriaBuilder, root, subqueryRoot);
+        subquery.select(criteriaBuilder.literal(1)).where(predicates.toArray(Predicate[]::new));
+
+        return this.applyPredicate(criteriaBuilder.exists(subquery));
     }
     /* [END] Gestione di condizioni * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 

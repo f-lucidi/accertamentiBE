@@ -8,13 +8,13 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "W_TB_ACCERTAMENTI_TIPO_PAGAMENTO")
-public class WTbAccertamentiTipoPagamento {
+@Table(name = "W_TB_ACCERTAMENTI_STATI_PAGAMENTO")
+public class WTBAccertamentiStatiPagamento {
 
     @Id
-    @Column(name = "ID")
+    @Column(name = "ID_STATO")
     private Long id;
 
-    @Column(name = "DESCRIZIONE")
+    @Column(name = "DESCRIZIONE_STATO")
     private String descrizione;
 }

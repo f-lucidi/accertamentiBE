@@ -1,1 +1,11 @@
 ﻿.idea/
+
+### Claude Code (configurazione, memorie e istruzioni locali: non vanno mai nel repo) ###
+.claude/
+**/.claude/
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+**/CLAUDE.local.md
+.mcp.json
+**/.mcp.json
