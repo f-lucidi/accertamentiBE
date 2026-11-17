@@ -17,7 +17,6 @@ import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoP
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento_;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiVersMoreInteressiSanzioniV;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiVersMoreInteressiSanzioniV_;
-import it.sogei.tabacchi.accertamenti.business.model.records.ChiavePeriodoPosizione;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -29,13 +28,8 @@ import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.BinaryOperator;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 // applicationScoped: indica che l'istanza di questa classe sarà condivisa tra tutte
 // le richieste e sessioni dell'applicazione
@@ -196,10 +190,10 @@ public class ConsultazioneImposteDao implements IConsultazioneImposteDao {
     //          M3  -> mesi [3],     quindicina null -> AND p.MESE IN (3)
     //          Q4  -> mesi [2],     quindicina 2    -> AND p.MESE IN (2) AND p.NUM_QUINDICINA = 2
     //          "Tutte" o vuoto -> periodo null       -> nessuna condizione
-    private void applicaFiltroPeriodoContabile(CriteriaQueryBuilder<WTBAccertamentiElencoPosizioni> builder, PeriodoContabileDto periodo) {
+    private void applicaFiltroPeriodoContabile(CriteriaQueryBuilder<WTBAccertamentiElencoPosizioni> builder, PeriodoContabileDto periodoContabileDto) {
         builder
-                .addInCondition(WTBAccertamentiElencoPosizioni_.mese, null != periodo ? periodo.getMesi() : null)
-                .addEqualCondition(WTBAccertamentiElencoPosizioni_.numQuindicina, null != periodo ? periodo.getNumQuindicina() : null);
+                .addInCondition(WTBAccertamentiElencoPosizioni_.mese, null != periodoContabileDto ? periodoContabileDto.getMesi() : null)
+                .addEqualCondition(WTBAccertamentiElencoPosizioni_.numQuindicina, null != periodoContabileDto ? periodoContabileDto.getNumQuindicina() : null);
     }
 
     // la posizione viene presa solo se esiste almeno un versamento dello stesso periodo che rispetta i filtri sui pagamenti.
@@ -251,87 +245,65 @@ public class ConsultazioneImposteDao implements IConsultazioneImposteDao {
         return condizioni;
     }
 
-    // ------------ DATI AGGIUNTIVI DELLE POSIZIONI (una query per tutta la pagina, non una per riga) ------------
+    // ------------ DATI AGGIUNTIVI DI UNA POSIZIONE (una query per ogni dato, per ogni riga della pagina) ------------
     //
-    // FLUSSO: dopo findElencoPosizioni il controller (popolaPosizioni) raccoglie dalla pagina gli insiemi di
-    // cf, anni, mesi e ID e chiama questi tre metodi una volta sola. Ognuno restituisce una Map da cui il
-    // controller legge il valore di ogni riga. Sono 3 query in tutto invece di 3 per ogni riga (problema N+1).
+    // FLUSSO: dopo findElencoPosizioni il controller, per ogni posizione della pagina, chiama questi tre metodi
+    // e mette il risultato nel DTO con il setter corrispondente. Codice semplice, ma 3 query per riga
+    // (con 10 righe per pagina sono 30 query in più).
 
-    // Ragione sociale di ogni P.IVA della pagina: è il collegamento del menu filtri fatto al contrario
+    // Ragione sociale del soggetto: è il collegamento del menu filtri fatto al contrario
     // (da CF_SOG_OBBLIGATO della posizione a DENOMINAZIONE del soggetto).
-    //   SELECT * FROM W_TB_ACCERTAMENTI_SOGGETTI_V
-    //   WHERE CATEGORIA = :sigla AND CF_PIVA IN (:cfDellaPagina)
+    //   SELECT * FROM W_TB_ACCERTAMENTI_SOGGETTI_V WHERE CATEGORIA = :sigla AND CF_PIVA = :cf
+    // null se il soggetto non c'è; se la vista avesse più righe vince la prima (niente getSingleResult,
+    // che con più righe lancerebbe eccezione e farebbe fallire tutta la ricerca)
     @Override
-    public Map<String, String> findRagioniSociali(String categoriaProdotto, Collection<String> cfSogObbligati) {
-        Map<String, String> ragioniSociali = new HashMap<>();
-        if (cfSogObbligati.isEmpty()) {
-            return ragioniSociali;
-        }
+    public String findRagioneSociale(String categoriaProdotto, String cfSogObbligato) {
         List<WTBAccertamentiSoggettiV> soggetti = queryManager.createBuilder(WTBAccertamentiSoggettiV.class)
                 .addEqualCondition(WTBAccertamentiSoggettiV_.categoria, categoriaProdotto)
-                .addInCondition(WTBAccertamentiSoggettiV_.cfPiva, new ArrayList<>(cfSogObbligati))
+                .addEqualCondition(WTBAccertamentiSoggettiV_.cfPiva, cfSogObbligato)
                 .getResultList();
-        // putIfAbsent: se la vista avesse più righe per la stessa P.IVA, vince la prima
-        soggetti.forEach(soggetto -> ragioniSociali.putIfAbsent(soggetto.getCfPiva(), soggetto.getDenominazione()));
-        return ragioniSociali;
+        return soggetti.isEmpty() ? null : soggetti.get(0).getDenominazione();
     }
 
-    // Interessi legali ancora da pagare, sommati per posizione:
+    // Somma degli interessi legali ancora da pagare della posizione:
     //   SELECT * FROM W_TB_ACCERTAMENTI_INTERESSI_LEGALI_PER_ANNO
-    //   WHERE ID_POSIZIONE IN (:idDellaPagina)
+    //   WHERE ID_POSIZIONE = :idPosizione
     //     AND (STATO_PAGAMENTO_INTERESSE_LEGALE IS NULL OR STATO_PAGAMENTO_INTERESSE_LEGALE <> :pagato)
-    // la somma (equivalente a SUM(INTERESSE_LEGALE) ... GROUP BY ID_POSIZIONE) si fa in Java con lo stream
+    // la somma (equivalente a SUM(INTERESSE_LEGALE)) si fa in Java; 0 se non ce ne sono
     @Override
-    public Map<Long, BigDecimal> findInteressiLegaliNonPagati(Collection<Long> idPosizioni) {
-        if (idPosizioni.isEmpty()) {
-            return new HashMap<>();
-        }
+    public BigDecimal findInteressiLegaliNonPagati(Long idPosizione) {
         List<WTBAccertamentiInteressiLegaliPerAnno> interessiNonPagati =
                 queryManager.createBuilder(WTBAccertamentiInteressiLegaliPerAnno.class)
-                        .addInCondition(WTBAccertamentiInteressiLegaliPerAnno_.idPosizione, new ArrayList<>(idPosizioni))
+                        .addEqualCondition(WTBAccertamentiInteressiLegaliPerAnno_.idPosizione, idPosizione)
                         // non pagato = stato vuoto oppure diverso da "pagato"
                         .orConditions(b -> b
                                 .addIsNullCondition(WTBAccertamentiInteressiLegaliPerAnno_.statoPagamentoInteresseLegale)
                                 .addNotEqualCondition(WTBAccertamentiInteressiLegaliPerAnno_.statoPagamentoInteresseLegale, Constants.INTERESSE_LEGALE_PAGATO))
                         .getResultList();
-        // somma per posizione (gli importi null non contano)
+        // somma degli importi (quelli null non contano), partendo da zero
         return interessiNonPagati.stream()
-                .filter(interesse -> null != interesse.getInteresseLegale())
-                .collect(Collectors.toMap(
-                        WTBAccertamentiInteressiLegaliPerAnno::getIdPosizione,
-                        WTBAccertamentiInteressiLegaliPerAnno::getInteresseLegale,
-                        BigDecimal::add));
+                .map(WTBAccertamentiInteressiLegaliPerAnno::getInteresseLegale)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // Data dell'ultimo versamento di ogni periodo della pagina (senza i filtri sui pagamenti della ricerca):
-    //   SELECT * FROM W_TB_ACCERTAMENTI_VERS_MORE_INTERESSI_SANZIONI_V
-    //   WHERE CATEGORIA = :sigla
-    //     AND CF_SOG_OBBLIGATO IN (:cf) AND ANNO IN (:anni) AND MESE IN (:mesi)
-    //     AND DATA_PAGAMENTO IS NOT NULL
-    // il massimo per periodo (equivalente a MAX(DATA_PAGAMENTO) ... GROUP BY cf, anno, mese, quindicina)
-    // si calcola in Java con lo stream
+    // Data dell'ultimo versamento del periodo della posizione (senza i filtri sui pagamenti della ricerca).
+    // Il massimo lo calcola direttamente il DB:
+    //   SELECT MAX(DATA_PAGAMENTO) FROM W_TB_ACCERTAMENTI_VERS_MORE_INTERESSI_SANZIONI_V
+    //   WHERE CATEGORIA = :sigla AND CF_SOG_OBBLIGATO = :cf
+    //     AND ANNO = :anno AND MESE = :mese AND NUM_QUINDICINA = :numQuindicina
+    // null se nel periodo non ci sono versamenti (MAX ignora le date null)
     @Override
-    public Map<ChiavePeriodoPosizione, LocalDate> findDateUltimoVersamento(String categoriaProdotto, Collection<String> cfSogObbligati,
-                                                                          Collection<Integer> anni, Collection<Integer> mesi) {
-        if (cfSogObbligati.isEmpty() || anni.isEmpty() || mesi.isEmpty()) {
-            return new HashMap<>();
-        }
-        // i filtri IN sono separati, quindi possono arrivare anche periodi non in pagina: nel controller si leggono
-        // solo le chiavi delle posizioni mostrate
-        List<WTBAccertamentiVersMoreInteressiSanzioniV> versamenti =
-                queryManager.createBuilder(WTBAccertamentiVersMoreInteressiSanzioniV.class)
-                        .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.categoria, categoriaProdotto)
-                        .addInCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.cfSogObbligato, new ArrayList<>(cfSogObbligati))
-                        .addInCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.anno, new ArrayList<>(anni))
-                        .addInCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.mese, new ArrayList<>(mesi))
-                        .addIsNotNullCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.dataPagamento)
-                        .getResultList();
-        // data più recente per periodo (cf + anno + mese + quindicina)
-        return versamenti.stream()
-                .collect(Collectors.toMap(
-                        versamento -> new ChiavePeriodoPosizione(versamento.getCfSogObbligato(), versamento.getAnno(),
-                                versamento.getMese(), versamento.getNumQuindicina()),
-                        WTBAccertamentiVersMoreInteressiSanzioniV::getDataPagamento,
-                        BinaryOperator.maxBy(Comparator.naturalOrder())));
+    public LocalDate findDataUltimoVersamento(String categoriaProdotto, String cfSogObbligato,
+                                              Integer anno, Integer mese, Integer numQuindicina) {
+        // selectMax va chiamato PRIMA delle condizioni (come selectCount), così la WHERE resta sulla query del MAX
+        return queryManager.createBuilder(WTBAccertamentiVersMoreInteressiSanzioniV.class)
+                .selectMax(WTBAccertamentiVersMoreInteressiSanzioniV_.dataPagamento)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.categoria, categoriaProdotto)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.cfSogObbligato, cfSogObbligato)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.anno, anno)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.mese, mese)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.numQuindicina, numQuindicina)
+                .getSingleResult();
     }
 }

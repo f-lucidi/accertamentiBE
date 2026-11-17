@@ -46,11 +46,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             throw new BusinessException(ExceptionType.UNAUTHORIZED_USER);
         }
 
-        UserInfo user = (UserInfo) httpRequest.getSession().getAttribute(Constants.SessionKeys.USER);
+        UserInfo userInfo = (UserInfo) httpRequest.getSession().getAttribute(Constants.SessionKeys.USER);
 
-        if (Objects.isNull(user)) {
-            user = userController.getUserInfo(this.httpRequest);
-            this.httpRequest.getSession().setAttribute(Constants.SessionKeys.USER, user);
+        if (Objects.isNull(userInfo)) {
+            userInfo = userController.getUserInfo(this.httpRequest);
+            this.httpRequest.getSession().setAttribute(Constants.SessionKeys.USER, userInfo);
         }
     }
 

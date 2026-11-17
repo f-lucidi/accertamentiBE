@@ -34,7 +34,7 @@ public class ConsultazioneImposteService extends AbstractService implements ICon
 
     @Override
     public Response findAllElencoPosizioni(String categoriaProdotto, Integer pagina, Integer elementiPerPagina,
-                                           ParametriFiltriRicercaDto filtriRicerca) {
-        return ok(consultazioneImposteController.findAllElencoPosizioni(categoriaProdotto, filtriRicerca, pagina, elementiPerPagina));
+                                           ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
+        return ok(consultazioneImposteController.findAllElencoPosizioni(categoriaProdotto, parametriFiltriRicercaDto, pagina, elementiPerPagina));
     }
 }

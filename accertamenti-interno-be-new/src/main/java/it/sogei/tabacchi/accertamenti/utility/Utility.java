@@ -136,6 +136,16 @@ public class Utility {
                         .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
+    // data in formato dd/MM/yyyy, null se la data manca
+    public static String formattaData(LocalDate data) {
+        return null == data ? null : data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    }
+
+    // fine validità da mostrare: null se il gruppo è ancora aperto (2999-12-31)
+    public static String formattaDataFineValidita(LocalDate dataFineValidita) {
+        return Constants.GestioneAliquote.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : formattaData(dataFineValidita);
+    }
+
     public static String bytesToString(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }

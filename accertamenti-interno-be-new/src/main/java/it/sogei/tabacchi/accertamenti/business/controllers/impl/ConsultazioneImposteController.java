@@ -10,7 +10,6 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaPr
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento;
-import it.sogei.tabacchi.accertamenti.business.model.records.ChiavePeriodoPosizione;
 import it.sogei.tabacchi.accertamenti.business.model.records.CriteriRicercaPosizioni;
 import it.sogei.tabacchi.accertamenti.business.validation.CommonValidator;
 import it.sogei.tabacchi.accertamenti.business.validation.ConsultazioneImposteValidator;
@@ -22,12 +21,7 @@ import it.sogei.tabacchi.accertamenti.utility.Utility;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RequestScoped
 @LogMethodInvocation(logParameters = false)
@@ -63,44 +57,46 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
         String sigla = risolviSiglaCategoria(categoriaProdotto);
         // anno facoltativo: se presente la lista contiene solo i soggetti attivi in quell'anno
         Integer anno = Utility.parseInteger(annoContabile, "annoContabile");
-        ListeFiltriRicercaDto filtri = new ListeFiltriRicercaDto();
-        filtri.setListaRagioneSocialePIva(customMapper.toRagioneSocialePIvaDto(
+        ListeFiltriRicercaDto listeFiltriRicercaDto = new ListeFiltriRicercaDto();
+        listeFiltriRicercaDto.setListaRagioneSocialePIva(customMapper.toRagioneSocialePIvaDto(
                 consultazioneImposteDao.findAllRagioneSocialeEPivaByCategoriaProdotto(sigla, anno)));
-        filtri.setTipiPagamenti(customMapper.toTipiPagamentoDto(
+        listeFiltriRicercaDto.setTipiPagamenti(customMapper.toTipiPagamentoDto(
                 consultazioneImposteDao.findAllTipiPagamento()));
-        return filtri;
+        return listeFiltriRicercaDto;
     }
 
     @Override
-    public RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto filtri,
+    public RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
                                                                      Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         // categoria + filtri, senza DB: presenza e almeno un criterio
-        validator.validaFiltriRicerca(categoriaProdotto, filtri);
+        validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto);
         String sigla = risolviSiglaCategoria(categoriaProdotto);
         // stringhe del FE -> valori tipizzati, una volta sola (gli errori di formato vengono lanciati qui)
-        CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, filtri);
+        CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, parametriFiltriRicercaDto);
         validator.validaCriteriRicerca(criteri);
         int pagina = Utility.normalizzaPagina(paginaRichiesta);
         int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
         List<WTBAccertamentiElencoPosizioni> posizioni = consultazioneImposteDao.findElencoPosizioni(criteri, pagina, elementiPerPagina);
         Long totaleElementi = consultazioneImposteDao.countElencoPosizioni(criteri);
-        return RisultatoPaginatoDto.of(popolaPosizioni(sigla, posizioni), totaleElementi, pagina, elementiPerPagina);
+        // ogni posizione -> DTO completo (vedi popolaPosizione)
+        List<PosizioneDto> posizioniDto = posizioni.stream().map(this::popolaPosizione).toList();
+        return RisultatoPaginatoDto.of(posizioniDto, totaleElementi, pagina, elementiPerPagina);
     }
 
     // converte i filtri ricevuti come stringhe nei tipi usati dalla query: stringhe vuote -> null (filtro non applicato),
     // date in LocalDate, periodo contabile in mesi/quindicina, descrizione del tipo pagamento nel suo ID
-    private CriteriRicercaPosizioni toCriteriRicerca(String sigla, ParametriFiltriRicercaDto filtri) {
+    private CriteriRicercaPosizioni toCriteriRicerca(String sigla, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
         return new CriteriRicercaPosizioni(
                 sigla,
-                Utility.parseInteger(filtri.getAnnoContabile(), "annoContabile"),
+                Utility.parseInteger(parametriFiltriRicercaDto.getAnnoContabile(), "annoContabile"),
                 // il frontend invia la P.IVA nel campo "ragioneSociale"
-                Utility.nullIfBlank(filtri.getRagioneSociale()),
-                Utility.parsePeriodoContabile(filtri.getPeriodoContabile()),
-                Utility.parseData(filtri.getInizioPeriodo(), "inizioPeriodo"),
-                Utility.parseData(filtri.getFinePeriodo(), "finePeriodo"),
-                Utility.parseData(filtri.getDataPagamentoDa(), "dataPagamentoDa"),
-                Utility.parseData(filtri.getDataPagamentoA(), "dataPagamentoA"),
-                risolviIdTipoPagamento(filtri.getTipoPagamento()));
+                Utility.nullIfBlank(parametriFiltriRicercaDto.getRagioneSociale()),
+                Utility.parsePeriodoContabile(parametriFiltriRicercaDto.getPeriodoContabile()),
+                Utility.parseData(parametriFiltriRicercaDto.getInizioPeriodo(), "inizioPeriodo"),
+                Utility.parseData(parametriFiltriRicercaDto.getFinePeriodo(), "finePeriodo"),
+                Utility.parseData(parametriFiltriRicercaDto.getDataPagamentoDa(), "dataPagamentoDa"),
+                Utility.parseData(parametriFiltriRicercaDto.getDataPagamentoA(), "dataPagamentoA"),
+                risolviIdTipoPagamento(parametriFiltriRicercaDto.getTipoPagamento()));
     }
 
     // la categoria (già validata come obbligatoria) deve esistere in W_TB_ACCERTAMENTI_CATEGORIE_PROD:
@@ -128,29 +124,20 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
         return tipoPagamento.getId().intValue();
     }
 
-    // mappa le posizioni e aggiunge i dati che stanno su altre tabelle (ragione sociale, data ultimo versamento,
-    // interessi legali) con 3 query per tutta la pagina, invece di 3 query per ogni riga
-    private List<PosizioneDto> popolaPosizioni(String sigla, List<WTBAccertamentiElencoPosizioni> posizioni) {
-        if (posizioni.isEmpty()) {
-            return List.of();
-        }
-        Set<String> cfSogObbligati = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getCfSogObbligato).collect(Collectors.toSet());
-        Set<Integer> anni = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getAnno).collect(Collectors.toSet());
-        Set<Integer> mesi = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getMese).collect(Collectors.toSet());
-        Set<Long> idPosizioni = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getId).collect(Collectors.toSet());
-
-        Map<String, String> ragioniSociali = consultazioneImposteDao.findRagioniSociali(sigla, cfSogObbligati);
-        Map<ChiavePeriodoPosizione, LocalDate> dateUltimoVersamento =
-                consultazioneImposteDao.findDateUltimoVersamento(sigla, cfSogObbligati, anni, mesi);
-        Map<Long, BigDecimal> interessiLegali = consultazioneImposteDao.findInteressiLegaliNonPagati(idPosizioni);
-
-        return posizioni.stream().map(posizione -> {
-            PosizioneDto dto = customMapper.toPosizioneDto(posizione);
-            dto.setRagioneSociale(ragioniSociali.getOrDefault(posizione.getCfSogObbligato(), Constants.RAGIONE_SOCIALE_NON_DISPONIBILE));
-            dto.setDataUltimoVersamento(dateUltimoVersamento.get(new ChiavePeriodoPosizione(
-                    posizione.getCfSogObbligato(), posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina())));
-            dto.setInteressiLegali(interessiLegali.getOrDefault(posizione.getId(), BigDecimal.ZERO));
-            return dto;
-        }).toList();
+    // mappa una posizione nel DTO e aggiunge, con i setter, i dati che stanno su altre tabelle.
+    // Ogni setter fa una query: 3 query per ogni riga della pagina.
+    private PosizioneDto popolaPosizione(WTBAccertamentiElencoPosizioni posizione) {
+        // campi presi direttamente dalla posizione (importi, stato, periodo...)
+        PosizioneDto posizioneDto = customMapper.toPosizioneDto(posizione);
+        // ragione sociale da W_TB_ACCERTAMENTI_SOGGETTI_V (testo di default se il soggetto non c'è)
+        posizioneDto.setRagioneSociale(Utility.getOrDefault(
+                consultazioneImposteDao.findRagioneSociale(posizione.getCategoria(), posizione.getCfSogObbligato()),
+                Constants.RAGIONE_SOCIALE_NON_DISPONIBILE));
+        // data dell'ultimo versamento dello stesso periodo (cf + anno + mese + quindicina)
+        posizioneDto.setDataUltimoVersamento(consultazioneImposteDao.findDataUltimoVersamento(posizione.getCategoria(),
+                posizione.getCfSogObbligato(), posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina()));
+        // somma degli interessi legali non ancora pagati della posizione
+        posizioneDto.setInteressiLegali(consultazioneImposteDao.findInteressiLegaliNonPagati(posizione.getId()));
+        return posizioneDto;
     }
 }

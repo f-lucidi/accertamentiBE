@@ -1,17 +1,14 @@
 package it.sogei.tabacchi.accertamenti.business.dao.interfaces;
 
-import it.sogei.tabacchi.accertamenti.business.model.records.CriteriRicercaPosizioni;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiSoggettiV;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento;
-import it.sogei.tabacchi.accertamenti.business.model.records.ChiavePeriodoPosizione;
+import it.sogei.tabacchi.accertamenti.business.model.records.CriteriRicercaPosizioni;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public interface IConsultazioneImposteDao {
 
@@ -31,13 +28,13 @@ public interface IConsultazioneImposteDao {
 
     Long countElencoPosizioni(CriteriRicercaPosizioni criteri);
 
-    // cf -> denominazione
-    Map<String, String> findRagioniSociali(String categoriaProdotto, Collection<String> cfSogObbligati);
+    // denominazione del soggetto, null se non trovato
+    String findRagioneSociale(String categoriaProdotto, String cfSogObbligato);
 
-    // id posizione -> somma degli interessi legali non pagati
-    Map<Long, BigDecimal> findInteressiLegaliNonPagati(Collection<Long> idPosizioni);
+    // somma degli interessi legali non pagati della posizione (0 se non ce ne sono)
+    BigDecimal findInteressiLegaliNonPagati(Long idPosizione);
 
-    // periodo della posizione -> data dell'ultimo versamento
-    Map<ChiavePeriodoPosizione, LocalDate> findDateUltimoVersamento(String categoriaProdotto, Collection<String> cfSogObbligati,
-                                                                   Collection<Integer> anni, Collection<Integer> mesi);
+    // data più recente di pagamento nel periodo della posizione, null se non ci sono versamenti
+    LocalDate findDataUltimoVersamento(String categoriaProdotto, String cfSogObbligato,
+                                       Integer anno, Integer mese, Integer numQuindicina);
 }

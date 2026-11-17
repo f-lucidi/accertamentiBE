@@ -16,6 +16,6 @@ public interface IConsultazioneImposteController {
 
     ListeFiltriRicercaDto getFiltriRicerca(String categoriaProdotto, String annoContabile);
 
-    RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto filtri,
+    RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
                                                               Integer pagina, Integer elementiPerPagina);
 }

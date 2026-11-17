@@ -14,6 +14,7 @@ public enum ExceptionType {
     OPERATION_NOT_ALLOWED("operation.not.allowed", Response.Status.FORBIDDEN),
     PERSISTENCE_ERROR("persistence.error", Response.Status.INTERNAL_SERVER_ERROR),
     GENERIC_FIELD_VALUE_NOT_VALID("generic.field.value.not.valid", Response.Status.BAD_REQUEST),
+    REQUEST_BODY_NOT_VALID("request.body.not.valid", Response.Status.BAD_REQUEST),
     NOT_FOUND("resource.not.found", Response.Status.NOT_FOUND),
     EXPORT_ERROR("export.error", Response.Status.INTERNAL_SERVER_ERROR),
     ALIQUOTA_FUTURA_ALREADY_CREATED("aliquota.futura.already.created", Response.Status.FORBIDDEN),

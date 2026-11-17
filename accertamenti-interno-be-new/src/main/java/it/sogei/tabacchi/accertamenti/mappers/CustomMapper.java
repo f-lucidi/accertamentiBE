@@ -1,9 +1,12 @@
 package it.sogei.tabacchi.accertamenti.mappers;
 
+import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaModificaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RagioneSocialePIvaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.TipoPagamentoDto;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiSoggettiV;
@@ -57,6 +60,30 @@ public interface CustomMapper {
     @Mapping(target = "dataUltimoVersamento", ignore = true)
     @Mapping(target = "interessiLegali", ignore = true)
     PosizioneDto toPosizioneDto(WTBAccertamentiElencoPosizioni posizione);
+
+    // riga dell'elenco aliquote: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto.
+    // aliquota, giorniRitardoDa e giorniRitardoA hanno lo stesso nome: MapStruct li copia da solo
+    @Mapping(target = "idAliquota", source = "id")
+    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(aliquotaMora.getDataInizioVal()))")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(aliquotaMora.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(aliquotaMora.getDtInserimento()))")
+    AliquotaDto toAliquotaDto(WTBAccertamentiAliquotaMora aliquotaMora);
+
+    List<AliquotaDto> toAliquoteDto(List<WTBAccertamentiAliquotaMora> aliquoteMora);
+
+    // aliquota da inserire: copia valori e giorni, la decorrenza del gruppo diventa l'inizio validità.
+    // id dalla sequence; fine validità, flag e dati di inserimento li imposta il controller
+    @Mapping(target = "aliquota", source = "aliquotaModifica.valoreAliquota")
+    @Mapping(target = "giorniRitardoDa", source = "aliquotaModifica.giorniDa")
+    @Mapping(target = "giorniRitardoA", source = "aliquotaModifica.giorniA")
+    @Mapping(target = "dataInizioVal", source = "dataDecorrenza")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "dataFineVal", ignore = true)
+    @Mapping(target = "flagCancella", ignore = true)
+    @Mapping(target = "cfInserimento", ignore = true)
+    @Mapping(target = "dtInserimento", ignore = true)
+    @Mapping(target = "dataModifica", ignore = true)
+    WTBAccertamentiAliquotaMora toAliquotaMora(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza);
 
     /* ESEMPIO  */
 

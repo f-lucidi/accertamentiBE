@@ -94,6 +94,6 @@ public interface IConsultazioneImpostaService {
             @Parameter(description = "Elementi per pagina; se assente o < 1 usa il default (10), massimo 100", example = "10")
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri di ricerca; i campi non valorizzati vengono ignorati", required = true)
-            ParametriFiltriRicercaDto filtriRicerca);
+            ParametriFiltriRicercaDto parametriFiltriRicercaDto);
 }
 

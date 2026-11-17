@@ -1,5 +1,6 @@
 package it.sogei.tabacchi.accertamenti.utility;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 public class Constants {
@@ -33,6 +34,18 @@ public class Constants {
         public static final Integer SECONDA_QUINDICINA = 2;
         // la prima quindicina termina il 15 del mese, la seconda l'ultimo giorno del mese
         public static final int ULTIMO_GIORNO_PRIMA_QUINDICINA = 15;
+
+    }
+
+    // regole delle aliquote di mora storicizzate (gruppi con decorrenza e fine validità)
+    public static class GestioneAliquote {
+
+        // DATA_FINE_VAL di un gruppo ancora aperto (vigente o futuro): "nessuna fine"
+        public static final LocalDate DATA_FINE_VALIDITA_APERTA = LocalDate.of(2999, 12, 31);
+        // CF_INSERIMENTO quando non si conosce l'utente
+        public static final String CF_INSERIMENTO_SISTEMA = "SYSTEM";
+        // il primo scaglione di un gruppo deve partire da questo giorno di ritardo
+        public static final Integer PRIMO_GIORNO_RITARDO = 1;
 
     }
 
@@ -74,6 +87,12 @@ public class Constants {
         public static final String CONSULTAZIONE_IMPOSTE = "/consultazione-imposte";
         /* Lista Posizioni */
         public static final String LISTA_POSIZIONI = "/lista-posizioni";
+        /* Gestione parametri */
+        public static final String GESTIONE_PARAMETRI = "/gestione-parametri";
+        /* Aliquote di mora */
+        public static final String ALIQUOTE_LISTA = "/aliquote/lista";
+        public static final String ALIQUOTE_SALVA = "/aliquote/salva";
+        public static final String ALIQUOTE_INSERIMENTO_ABILITATO = "/aliquote/inserimento-abilitato";
     }
 
 
@@ -123,5 +142,28 @@ public class Constants {
 
         /* Utente */
         public static final String UFFICIO_UTENTE_NON_TROVATO = "Ufficio utente non trovato";
+
+        /* Gestione parametri - aliquote di mora (%s = numero dell'aliquota, come nei riquadri del frontend) */
+        public static final String INTERVALLO_DECORRENZA_NON_VALIDO = "La data inizio validità da non può essere successiva alla data inizio validità a.";
+        public static final String DATI_ALIQUOTE_OBBLIGATORI = "I dati delle aliquote sono obbligatori.";
+        public static final String TIPO_OPERAZIONE_OBBLIGATORIO = "Il tipo operazione è obbligatorio.";
+        public static final String DATA_DECORRENZA_OBBLIGATORIA = "La data di decorrenza è obbligatoria.";
+        public static final String DATA_DECORRENZA_PASSATA = "La data di decorrenza non può essere nel passato.";
+        public static final String ALIQUOTE_OBBLIGATORIE = "Indicare almeno un'aliquota.";
+        public static final String ALIQUOTA_VUOTA = "Aliquota %s: dati mancanti.";
+        public static final String ID_ALIQUOTA_NON_AMMESSO = "Aliquota %s: in inserimento non deve avere un id.";
+        public static final String VALORE_ALIQUOTA_OBBLIGATORIO = "Aliquota %s: il valore è obbligatorio.";
+        public static final String VALORE_ALIQUOTA_NON_POSITIVO = "Aliquota %s: il valore deve essere maggiore di zero.";
+        public static final String GIORNI_DA_OBBLIGATORIO = "Aliquota %s: i giorni di ritardo da sono obbligatori.";
+        public static final String GIORNI_A_NON_VALIDO = "Aliquota %s: i giorni di ritardo a devono essere maggiori dei giorni di ritardo da.";
+        public static final String PRIMA_ALIQUOTA_NON_DA_PRIMO_GIORNO = "La prima aliquota deve partire da %s giorno di ritardo.";
+        public static final String SOLO_ULTIMA_ALIQUOTA_APERTA = "Aliquota %s: solo l'ultima aliquota può non avere i giorni di ritardo a.";
+        public static final String GIORNI_NON_CONSECUTIVI = "Aliquote %s e %s: i giorni di ritardo devono essere consecutivi, senza buchi né sovrapposizioni.";
+        public static final String ULTIMA_ALIQUOTA_NON_APERTA = "Nessuna aliquota definita oltre i %s giorni di ritardo.";
+        public static final String ALIQUOTE_SALVATE_OBBLIGATORIE = "In modifica indicare le aliquote già salvate del gruppo.";
+        public static final String ALIQUOTE_DA_MODIFICARE_NON_TROVATE = "Aliquote da modificare non trovate.";
+        public static final String GRUPPO_ALIQUOTE_NON_MODIFICABILE = "Le aliquote con decorrenza %s sono già in vigore e non sono più modificabili.";
+        public static final String GRUPPO_ALIQUOTE_INCOMPLETO = "Indicare tutte e sole le aliquote già salvate del gruppo.";
+        public static final String DECORRENZA_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio delle aliquote precedenti.";
     }
 }

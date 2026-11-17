@@ -36,15 +36,15 @@ public class ConsultazioneImposteValidator {
 
     // 1° passo, sui valori grezzi ricevuti (categoria dal path + filtri dal body), prima di ogni accesso al DB:
     // presenza della categoria e dei filtri, almeno un criterio di ricerca
-    public void validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto filtri) {
+    public void validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
         commonValidator.validaObbligatorio(categoriaProdotto, Constants.ErrorMessages.CATEGORIA_PRODOTTO_OBBLIGATORIA);
-        commonValidator.validaObbligatorio(filtri, Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI);
+        commonValidator.validaObbligatorio(parametriFiltriRicercaDto, Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI);
         // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
         // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
         commonValidator.validaAlmenoUnoValorizzato(
                 Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA,
-                filtri.getRagioneSociale(), filtri.getPeriodoContabile(),
-                filtri.getDataPagamentoDa(), filtri.getDataPagamentoA());
+                parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
+                parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
     }
 
     // 2° passo, sui filtri già convertiti (gli errori di formato li ha già lanciati la conversione):
