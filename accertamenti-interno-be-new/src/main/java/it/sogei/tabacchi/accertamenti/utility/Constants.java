@@ -46,6 +46,8 @@ public class Constants {
         public static final String CF_INSERIMENTO_SISTEMA = "SYSTEM";
         // il primo scaglione di un gruppo deve partire da questo giorno di ritardo
         public static final Integer PRIMO_GIORNO_RITARDO = 1;
+        // W_TB_ACCERTAMENTI_INTERESSE_LEGALE.FLAG_CANCELLA (numerico 0/1/2): 0 = riga valida
+        public static final Integer FLAG_CANCELLA_NO = 0;
 
     }
 
@@ -65,6 +67,7 @@ public class Constants {
         public static final String CATEGORIA_PRODOTTO = "categoriaProdotto";
         public static final String PAGINA = "pagina";
         public static final String ANNO = "anno";
+        public static final String TIPO_PARAMETRO = "tipoParametro";
         public static final String ELEMENTI_PER_PAGINA = "elementiPerPagina";
         public static final String DEFAULT_PAGINA = "1";
         public static final String DEFAULT_ELEMENTI_PER_PAGINA = "5";
@@ -97,6 +100,8 @@ public class Constants {
         public static final String INTERESSI_LISTA = "/interessi/lista";
         public static final String INTERESSI_SALVA = "/interessi/salva";
         public static final String INTERESSI_INSERIMENTO_ABILITATO = "/interessi/inserimento-abilitato";
+        /* Anni per il box di ricerca */
+        public static final String ANNI = "/anni";
     }
 
 

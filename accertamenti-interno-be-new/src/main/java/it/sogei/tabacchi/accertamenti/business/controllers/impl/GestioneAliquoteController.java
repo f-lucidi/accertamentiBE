@@ -9,6 +9,7 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.business.model.enums.TipoOperazione;
+import it.sogei.tabacchi.accertamenti.business.validation.CommonValidator;
 import it.sogei.tabacchi.accertamenti.business.validation.GestioneAliquoteValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
@@ -34,6 +35,9 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     private GestioneAliquoteValidator validator;
 
     @Inject
+    private CommonValidator commonValidator;
+
+    @Inject
     private CustomMapper customMapper;
 
     // ------------ ELENCO ALIQUOTE ------------
@@ -43,7 +47,7 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
                                                           Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         // body JSON null = nessun filtro, come {} (tutte le aliquote non cancellate)
         FiltriGestioneParametriDto filtriGestioneParametriDto = Utility.getOrDefault(filtriGestioneParametriDtoRichiesto, new FiltriGestioneParametriDto());
-        validator.validaFiltriAliquote(filtriGestioneParametriDto);
+        commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto);
         int pagina = Utility.normalizzaPagina(paginaRichiesta);
         int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
         List<WTBAccertamentiAliquotaMora> aliquote = gestioneAliquoteDao.findAliquote(filtriGestioneParametriDto, pagina, elementiPerPagina);

@@ -1,7 +1,6 @@
 package it.sogei.tabacchi.accertamenti.business.validation;
 
 import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaModificaDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
@@ -25,12 +24,6 @@ public class GestioneAliquoteValidator {
 
     @Inject
     private CommonValidator commonValidator;
-
-    // filtri dell'elenco, già normalizzati dal controller (null = filtri vuoti)
-    public void validaFiltriAliquote(FiltriGestioneParametriDto filtriGestioneParametriDto) {
-        commonValidator.validaIntervalloDate(filtriGestioneParametriDto.getDataInizioValiditaDa(), filtriGestioneParametriDto.getDataInizioValiditaA(),
-                Constants.ErrorMessages.INTERVALLO_DECORRENZA_NON_VALIDO);
-    }
 
     // 1° passo del salvataggio: body e tipo operazione presenti (serve al controller per scegliere il ramo)
     public void validaRichiestaAliquote(ModificaAliquoteDto modificaAliquote) {

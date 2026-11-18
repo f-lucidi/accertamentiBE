@@ -1,7 +1,9 @@
 package it.sogei.tabacchi.accertamenti.business.validation;
 
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
+import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.Dependent;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +36,12 @@ public class CommonValidator {
         if (null != da && null != a && da.isAfter(a)) {
             throw new BusinessException(messaggio);
         }
+    }
+
+    // filtri degli elenchi di gestione parametri (aliquote, interessi), già normalizzati dal controller (null = filtri vuoti)
+    public void validaFiltriGestioneParametri(FiltriGestioneParametriDto filtriGestioneParametriDto) {
+        validaIntervalloDate(filtriGestioneParametriDto.getDataInizioValiditaDa(), filtriGestioneParametriDto.getDataInizioValiditaA(),
+                Constants.ErrorMessages.INTERVALLO_DECORRENZA_NON_VALIDO);
     }
 
     // nessuno dei valori è valorizzato (null, vuoto o di soli spazi)
