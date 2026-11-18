@@ -9,9 +9,10 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.business.model.enums.TipoOperazione;
-import it.sogei.tabacchi.accertamenti.business.validation.CommonValidator;
 import it.sogei.tabacchi.accertamenti.business.validation.GestioneAliquoteValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
+import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
+import it.sogei.tabacchi.accertamenti.server.exceptions.enums.ExceptionType;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import it.sogei.tabacchi.accertamenti.utility.Utility;
@@ -20,6 +21,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +37,6 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     private GestioneAliquoteValidator validator;
 
     @Inject
-    private CommonValidator commonValidator;
-
-    @Inject
     private CustomMapper customMapper;
 
     // ------------ ELENCO ALIQUOTE ------------
@@ -47,12 +46,16 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
                                                           Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         // body JSON null = nessun filtro, come {} (tutte le aliquote non cancellate)
         FiltriGestioneParametriDto filtriGestioneParametriDto = Utility.getOrDefault(filtriGestioneParametriDtoRichiesto, new FiltriGestioneParametriDto());
-        commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto);
-        int pagina = Utility.normalizzaPagina(paginaRichiesta);
-        int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
-        List<WTBAccertamentiAliquotaMora> aliquote = gestioneAliquoteDao.findAliquote(filtriGestioneParametriDto, pagina, elementiPerPagina);
-        Long totaleElementi = gestioneAliquoteDao.countAliquote(filtriGestioneParametriDto);
-        return RisultatoPaginatoDto.of(customMapper.toAliquoteDto(aliquote), totaleElementi, pagina, elementiPerPagina);
+        List<String> errori = new ArrayList<>();
+        if (validator.validaFiltri(filtriGestioneParametriDto, errori).size() > 0) {
+            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+        } else {
+            int pagina = Utility.normalizzaPagina(paginaRichiesta);
+            int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
+            List<WTBAccertamentiAliquotaMora> aliquote = gestioneAliquoteDao.findAliquote(filtriGestioneParametriDto, pagina, elementiPerPagina);
+            Long totaleElementi = gestioneAliquoteDao.countAliquote(filtriGestioneParametriDto);
+            return RisultatoPaginatoDto.of(customMapper.toAliquoteDto(aliquote), totaleElementi, pagina, elementiPerPagina);
+        }
     }
 
     // ------------ SALVATAGGIO ALIQUOTE ------------
@@ -67,46 +70,69 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     @Override
     @Transactional
     public void salvaAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente) {
-        validator.validaRichiestaAliquote(modificaAliquote);
-        if (TipoOperazione.INSERIMENTO == modificaAliquote.getTipoOperazione()) {
-            inserisciGruppoAliquote(modificaAliquote, cfUtente);
+        // lista degli errori di validazione della richiesta: la riempiono i validator, a ogni fase si lancia se non è vuota
+        List<String> errori = new ArrayList<>();
+        if (validator.validaRichiestaAliquote(modificaAliquote, errori).size() > 0) {
+            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+        } else if (TipoOperazione.INSERIMENTO == modificaAliquote.getTipoOperazione()) {
+            inserisciGruppoAliquote(modificaAliquote, cfUtente, errori);
         } else {
-            modificaGruppoAliquote(modificaAliquote, cfUtente);
+            modificaGruppoAliquote(modificaAliquote, cfUtente, errori);
         }
     }
 
     // ------------ INSERIMENTO ------------
 
-    private void inserisciGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente) {
-        validator.validaInserimentoAliquote(modificaAliquote, !isInserimentoAliquoteAbilitato());
-        LocalDate oggi = LocalDate.now();
-        LocalDate dataDecorrenza = modificaAliquote.getDataDecorrenza();
-
-        for (AliquotaModificaDto aliquotaModifica : modificaAliquote.getScaglioni()) {
-            gestioneAliquoteDao.insertAliquota(creaAliquota(aliquotaModifica, dataDecorrenza, cfUtente, oggi));
+    private void inserisciGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente, List<String> errori) {
+        // errore di stato e non sui dati (403): esiste già un gruppo futuro o inserito oggi
+        if (!isInserimentoAliquoteAbilitato()) {
+            throw new BusinessException(ExceptionType.ALIQUOTA_FUTURA_ALREADY_CREATED);
+        } else if (validator.validaInserimentoAliquote(modificaAliquote, errori).size() > 0) {
+            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+        } else {
+            LocalDate oggi = LocalDate.now();
+            LocalDate dataDecorrenza = modificaAliquote.getDataDecorrenza();
+            for (AliquotaModificaDto aliquotaModifica : modificaAliquote.getScaglioni()) {
+                gestioneAliquoteDao.insertAliquota(creaAliquota(aliquotaModifica, dataDecorrenza, cfUtente, oggi));
+            }
+            chiudiGruppoPrecedente(dataDecorrenza, oggi);
         }
-
-        chiudiGruppoPrecedente(dataDecorrenza, oggi);
     }
 
     // ------------ MODIFICA ------------
 
     // MODIFICA di un gruppo ancora modificabile: aggiorna, aggiunge o cancella righe.
     // Il gruppo si riconosce dall'idGruppo che il frontend rimanda (la decorrenza attuale del gruppo)
-    private void modificaGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente) {
+    private void modificaGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente, List<String> errori) {
         // id del gruppo presente, righe presenti e non vuote
-        validator.validaElencoModifica(modificaAliquote);
-        // decorrenza attuale del gruppo, ricavata dal suo id (20270101 -> 2027-01-01): è quella salvata, non la nuova scelta dall'utente
-        LocalDate dataInizioGruppo = Utility.toDataInizioGruppo(modificaAliquote.getIdGruppo());
-        // tutte le righe non cancellate del gruppo, così come sono a DB
-        List<WTBAccertamentiAliquotaMora> gruppoSalvato = gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioGruppo);
-        // il gruppo esiste ed è ancora modificabile (decorrenza futura o inserito oggi)
-        validator.validaGruppoModificabile(gruppoSalvato, dataInizioGruppo);
-        // inizio del gruppo precedente (null se non c'è): alla fine la sua data di fine si sposta
-        // (decorrenza cambiata) o si riapre (gruppo cancellato)
-        LocalDate dataInizioPrecedente = gestioneAliquoteDao.findDataInizioGruppoPrecedente(dataInizioGruppo);
-        // decorrenza, righe del gruppo complete, valori e giorni consecutivi delle righe che restano
-        validator.validaModificaAliquote(modificaAliquote, gruppoSalvato, dataInizioPrecedente);
+        if (validator.validaElencoModifica(modificaAliquote, errori).size() > 0) {
+            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+        } else {
+            // decorrenza attuale del gruppo, ricavata dal suo id (20270101 -> 2027-01-01): è quella salvata, non la nuova scelta dall'utente
+            LocalDate dataInizioGruppo = Utility.toDataInizioGruppo(modificaAliquote.getIdGruppo());
+            // tutte le righe non cancellate del gruppo, così come sono a DB
+            List<WTBAccertamentiAliquotaMora> gruppoSalvato = gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioGruppo);
+            // il gruppo esiste ed è ancora modificabile (decorrenza futura o inserito oggi)
+            if (validator.validaGruppoModificabile(gruppoSalvato, dataInizioGruppo, errori).size() > 0) {
+                throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+            } else {
+                // inizio del gruppo precedente (null se non c'è): alla fine la sua data di fine si sposta
+                // (decorrenza cambiata) o si riapre (gruppo cancellato)
+                LocalDate dataInizioPrecedente = gestioneAliquoteDao.findDataInizioGruppoPrecedente(dataInizioGruppo);
+                // decorrenza, righe del gruppo complete, valori e giorni consecutivi delle righe che restano
+                if (validator.validaModificaAliquote(modificaAliquote, gruppoSalvato, dataInizioPrecedente, errori).size() > 0) {
+                    throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+                } else {
+                    applicaModificaGruppo(modificaAliquote, gruppoSalvato, dataInizioGruppo, dataInizioPrecedente, cfUtente);
+                }
+            }
+        }
+    }
+
+    // scritture della MODIFICA, a validazione superata: aggiorna, aggiunge o cancella le righe e
+    // sposta (decorrenza cambiata) o riapre (gruppo cancellato) la fine del gruppo precedente
+    private void applicaModificaGruppo(ModificaAliquoteDto modificaAliquote, List<WTBAccertamentiAliquotaMora> gruppoSalvato,
+                                       LocalDate dataInizioGruppo, LocalDate dataInizioPrecedente, String cfUtente) {
         // una sola data per tutte le scritture, anche se la richiesta finisce a cavallo della mezzanotte
         LocalDate oggi = LocalDate.now();
         // nuova decorrenza scelta dall'utente (uguale a dataInizioGruppo se non l'ha cambiata)

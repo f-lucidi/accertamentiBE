@@ -132,6 +132,9 @@ public class Constants {
     // messaggi delle BusinessException: quelli con %s vanno completati con String.format(MESSAGGIO, valori...)
     public static class ErrorMessages {
 
+        // tra i messaggi di validazione raccolti, uniti in un'unica BusinessException (i messaggi finiscono già col punto)
+        public static final String SEPARATORE_ERRORI = " ";
+
         /* Categoria prodotto */
         public static final String CATEGORIA_PRODOTTO_OBBLIGATORIA = "La categoria prodotto è obbligatoria.";
         public static final String CATEGORIA_PRODOTTO_NON_VALIDA = "Categoria prodotto non valida: %s";
@@ -182,7 +185,9 @@ public class Constants {
         public static final String TASSO_INTERESSE_OBBLIGATORIO = "Il tasso di interesse è obbligatorio.";
         public static final String TASSO_INTERESSE_NON_POSITIVO = "Il tasso di interesse deve essere maggiore di zero.";
         public static final String TASSO_INTERESSE_UGUALE_VIGENTE = "Il tasso di interesse non può essere uguale a quello in vigore (%s).";
-        public static final String CANCELLAZIONE_INTERESSE_NON_AMMESSA = "In inserimento il tasso di interesse non può essere cancellato.";
+        public static final String ID_INTERESSE_OBBLIGATORIO = "In modifica l'id del tasso di interesse è obbligatorio.";
+        public static final String ID_INTERESSE_NON_AMMESSO ="In inserimento il tasso di interesse non deve avere un id.";
+        public static final String CANCELLAZIONE_INTERESSE_NON_AMMESSA ="In inserimento il tasso di interesse non può essere cancellato.";
         public static final String INTERESSE_NON_TROVATO = "Tasso di interesse da modificare non trovato.";
         public static final String INTERESSE_NON_MODIFICABILE = "Il tasso di interesse con decorrenza %s è già in vigore e non è più modificabile.";
         public static final String DECORRENZA_INTERESSE_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio del tasso di interesse precedente.";

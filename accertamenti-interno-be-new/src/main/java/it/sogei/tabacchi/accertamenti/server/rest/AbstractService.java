@@ -1,8 +1,10 @@
 package it.sogei.tabacchi.accertamenti.server.rest;
 
 import it.sogei.tabacchi.accertamenti.business.model.dto.AllegatoDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.UserInfo;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
 import it.sogei.tabacchi.accertamenti.server.exceptions.enums.ExceptionType;
+import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -48,6 +50,13 @@ public abstract class AbstractService {
         }
 
         return null;
+    }
+
+    // CF dell'utente loggato (username di UserInfo in sessione), null se non presente.
+    // Si legge qui perché il controller non conosce la request HTTP
+    protected String getCfUtente() {
+        UserInfo userInfo = getSessionAttribute(Constants.SessionKeys.USER, UserInfo.class);
+        return null == userInfo ? null : userInfo.getUsername();
     }
 
     protected void setSessionAttribute(String key, Object object) {

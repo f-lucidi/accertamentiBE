@@ -7,9 +7,12 @@ import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
+import java.util.List;
+
 /**
  * Validazioni della funzionalità "Consultazione imposte".
- * Tutti i metodi lanciano BusinessException se il dato non è valido.
+ * Nessun metodo lancia eccezioni: aggiungono i messaggi alla lista errori creata dal controller e la restituiscono;
+ * è il controller a lanciare una sola BusinessException con tutti i messaggi.
  *
  * <p><b>Perché è un bean {@code @Dependent}</b> (e non una classe creata con {@code new}):</p>
  * <ul>
@@ -34,27 +37,38 @@ public class ConsultazioneImposteValidator {
     @Inject
     private CommonValidator commonValidator;
 
+    // categoria prodotto (dal path) obbligatoria
+    public List<String> validaCategoriaProdotto(String categoriaProdotto, List<String> errori) {
+        commonValidator.validaObbligatorio(categoriaProdotto, Constants.ErrorMessages.CATEGORIA_PRODOTTO_OBBLIGATORIA, errori);
+        return errori;
+    }
+
     // 1° passo, sui valori grezzi ricevuti (categoria dal path + filtri dal body), prima di ogni accesso al DB:
     // presenza della categoria e dei filtri, almeno un criterio di ricerca
-    public void validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
-        commonValidator.validaObbligatorio(categoriaProdotto, Constants.ErrorMessages.CATEGORIA_PRODOTTO_OBBLIGATORIA);
-        commonValidator.validaObbligatorio(parametriFiltriRicercaDto, Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI);
-        // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
-        // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
-        commonValidator.validaAlmenoUnoValorizzato(
-                Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA,
-                parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
-                parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
+    public List<String> validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
+                                            List<String> errori) {
+        validaCategoriaProdotto(categoriaProdotto, errori);
+        // senza filtri non c'è nessun criterio da controllare
+        if (commonValidator.validaObbligatorio(parametriFiltriRicercaDto, Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI, errori)) {
+            // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
+            // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
+            commonValidator.validaAlmenoUnoValorizzato(
+                    Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA, errori,
+                    parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
+                    parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
+        }
+        return errori;
     }
 
     // 2° passo, sui filtri già convertiti (gli errori di formato li ha già lanciati la conversione):
     // anno obbligatorio e intervalli di date coerenti
-    public void validaCriteriRicerca(CriteriRicercaPosizioni criteri) {
-        commonValidator.validaObbligatorio(criteri.anno(), Constants.ErrorMessages.ANNO_CONTABILE_OBBLIGATORIO);
+    public List<String> validaCriteriRicerca(CriteriRicercaPosizioni criteri, List<String> errori) {
+        commonValidator.validaObbligatorio(criteri.anno(), Constants.ErrorMessages.ANNO_CONTABILE_OBBLIGATORIO, errori);
         commonValidator.validaIntervalloDate(criteri.dataPagamentoDa(), criteri.dataPagamentoA(),
-                Constants.ErrorMessages.INTERVALLO_DATE_PAGAMENTO_NON_VALIDO);
+                Constants.ErrorMessages.INTERVALLO_DATE_PAGAMENTO_NON_VALIDO, errori);
         // inizio/fine periodo: intervallo sulla scadenza
         commonValidator.validaIntervalloDate(criteri.inizioPeriodo(), criteri.finePeriodo(),
-                Constants.ErrorMessages.INTERVALLO_PERIODO_NON_VALIDO);
+                Constants.ErrorMessages.INTERVALLO_PERIODO_NON_VALIDO, errori);
+        return errori;
     }
 }
