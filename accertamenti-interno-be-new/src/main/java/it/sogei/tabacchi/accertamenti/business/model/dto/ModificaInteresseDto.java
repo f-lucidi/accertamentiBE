@@ -6,7 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-// body di POST /gestione-parametri/interessi/salva: un solo tasso per decorrenza, niente scaglioni
+// body di POST /gestione-parametri/interessi/modifica: un solo tasso per decorrenza, niente scaglioni
 // (tipo ModificaInteresse del frontend)
 @Data
 public class ModificaInteresseDto {

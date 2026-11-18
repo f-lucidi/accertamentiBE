@@ -58,7 +58,7 @@ public interface IGestioneAliquoteService {
     Response isInserimentoAliquoteAbilitato();
 
     @POST
-    @Path(Constants.Endpoint.ALIQUOTE_SALVA)
+    @Path(Constants.Endpoint.ALIQUOTE_MODIFICA)
     @Consumes(MediaType.APPLICATION_JSON)
     // serve anche senza body di successo: gli errori ({"errorMessage": ...}) sono JSON
     @Produces(MediaType.APPLICATION_JSON)

@@ -94,11 +94,11 @@ public class Constants {
         public static final String GESTIONE_PARAMETRI = "/gestione-parametri";
         /* Aliquote di mora */
         public static final String ALIQUOTE_LISTA = "/aliquote/lista";
-        public static final String ALIQUOTE_SALVA = "/aliquote/salva";
+        public static final String ALIQUOTE_MODIFICA = "/aliquote/modifica";
         public static final String ALIQUOTE_INSERIMENTO_ABILITATO = "/aliquote/inserimento-abilitato";
         /* Interessi sul tardato pagamento */
         public static final String INTERESSI_LISTA = "/interessi/lista";
-        public static final String INTERESSI_SALVA = "/interessi/salva";
+        public static final String INTERESSI_MODIFICA = "/interessi/modifica";
         public static final String INTERESSI_INSERIMENTO_ABILITATO = "/interessi/inserimento-abilitato";
         /* Anni per il box di ricerca */
         public static final String ANNI = "/anni";

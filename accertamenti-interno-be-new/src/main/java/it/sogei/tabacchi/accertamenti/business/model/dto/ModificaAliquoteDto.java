@@ -6,7 +6,7 @@ import lombok.Data;
 import java.time.LocalDate;
 import java.util.List;
 
-// body di POST /gestione-parametri/aliquote/salva: un gruppo di aliquote con la stessa decorrenza
+// body di POST /gestione-parametri/aliquote/modifica: un gruppo di aliquote con la stessa decorrenza
 @Data
 public class ModificaAliquoteDto {
     private TipoOperazione tipoOperazione;
