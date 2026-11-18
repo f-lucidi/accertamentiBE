@@ -7,12 +7,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 // body di POST /gestione-parametri/aliquote/salva: un gruppo di aliquote con la stessa decorrenza
-// (tipo ModificaAliquote del frontend)
 @Data
 public class ModificaAliquoteDto {
     private TipoOperazione tipoOperazione;
+    private Integer idGruppo;                   // come arriva in AliquotaDto (es. 20270101); null in INSERIMENTO, obbligatorio in MODIFICA
     private LocalDate dataDecorrenza;           // yyyy-MM-dd
 
-    // righe del gruppo, ognuna è un'aliquota (stesso nome del frontend)
+    // righe del gruppo, ognuna è un'aliquota 
     private List<AliquotaModificaDto> scaglioni;
 }

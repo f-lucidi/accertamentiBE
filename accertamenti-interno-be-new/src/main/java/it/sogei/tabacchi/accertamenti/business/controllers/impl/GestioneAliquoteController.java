@@ -4,7 +4,7 @@ import it.sogei.tabacchi.accertamenti.business.controllers.interfaces.IGestioneA
 import it.sogei.tabacchi.accertamenti.business.dao.interfaces.IGestioneAliquoteDao;
 import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaModificaDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneAliquoteDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
@@ -39,15 +39,15 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     // ------------ ELENCO ALIQUOTE ------------
 
     @Override
-    public RisultatoPaginatoDto<AliquotaDto> findAliquote(FiltriGestioneAliquoteDto filtriRichiesti,
+    public RisultatoPaginatoDto<AliquotaDto> findAliquote(FiltriGestioneParametriDto filtriGestioneParametriDtoRichiesto,
                                                           Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         // body JSON null = nessun filtro, come {} (tutte le aliquote non cancellate)
-        FiltriGestioneAliquoteDto filtri = Utility.getOrDefault(filtriRichiesti, new FiltriGestioneAliquoteDto());
-        validator.validaFiltriAliquote(filtri);
+        FiltriGestioneParametriDto filtriGestioneParametriDto = Utility.getOrDefault(filtriGestioneParametriDtoRichiesto, new FiltriGestioneParametriDto());
+        validator.validaFiltriAliquote(filtriGestioneParametriDto);
         int pagina = Utility.normalizzaPagina(paginaRichiesta);
         int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
-        List<WTBAccertamentiAliquotaMora> aliquote = gestioneAliquoteDao.findAliquote(filtri, pagina, elementiPerPagina);
-        Long totaleElementi = gestioneAliquoteDao.countAliquote(filtri);
+        List<WTBAccertamentiAliquotaMora> aliquote = gestioneAliquoteDao.findAliquote(filtriGestioneParametriDto, pagina, elementiPerPagina);
+        Long totaleElementi = gestioneAliquoteDao.countAliquote(filtriGestioneParametriDto);
         return RisultatoPaginatoDto.of(customMapper.toAliquoteDto(aliquote), totaleElementi, pagina, elementiPerPagina);
     }
 
@@ -88,19 +88,16 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     // ------------ MODIFICA ------------
 
     // MODIFICA di un gruppo ancora modificabile: aggiorna, aggiunge o cancella righe.
-    // Il gruppo si riconosce dalla prima riga già salvata
+    // Il gruppo si riconosce dall'idGruppo che il frontend rimanda (la decorrenza attuale del gruppo)
     private void modificaGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente) {
-        validator.validaElencoModifica(modificaAliquote.getScaglioni());
-        // id della prima riga della richiesta già salvata a DB (le righe nuove non hanno id)
-        Long idPrimaAliquotaSalvata = getIdPrimaAliquotaGiaSalvata(modificaAliquote);
-        // la riga letta dal DB: da lei si ricava il gruppo, perché tutte le sue righe hanno la stessa decorrenza
-        WTBAccertamentiAliquotaMora primaAliquotaSalvata = gestioneAliquoteDao.findAliquotaById(idPrimaAliquotaSalvata);
-        // la riga esiste, non è cancellata e il gruppo è ancora modificabile (decorrenza futura o inserito oggi)
-        validator.validaGruppoModificabile(primaAliquotaSalvata);
-        // decorrenza attuale del gruppo, letta prima delle scritture: dopo, le righe avrebbero già quella nuova
-        LocalDate dataInizioGruppo = primaAliquotaSalvata.getDataInizioVal();
+        // id del gruppo presente, righe presenti e non vuote
+        validator.validaElencoModifica(modificaAliquote);
+        // decorrenza attuale del gruppo, ricavata dal suo id (20270101 -> 2027-01-01): è quella salvata, non la nuova scelta dall'utente
+        LocalDate dataInizioGruppo = Utility.toDataInizioGruppo(modificaAliquote.getIdGruppo());
         // tutte le righe non cancellate del gruppo, così come sono a DB
         List<WTBAccertamentiAliquotaMora> gruppoSalvato = gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioGruppo);
+        // il gruppo esiste ed è ancora modificabile (decorrenza futura o inserito oggi)
+        validator.validaGruppoModificabile(gruppoSalvato, dataInizioGruppo);
         // inizio del gruppo precedente (null se non c'è): alla fine la sua data di fine si sposta
         // (decorrenza cambiata) o si riapre (gruppo cancellato)
         LocalDate dataInizioPrecedente = gestioneAliquoteDao.findDataInizioGruppoPrecedente(dataInizioGruppo);
@@ -147,22 +144,12 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
         // nessuna riga rimasta: è l'eliminazione dell'intero gruppo
         if (isGruppoCancellato) {
             // senza questo gruppo torna in vigore il precedente: la sua fine si riapre
-            impostaFineValiditaGruppo(dataInizioPrecedente, Constants.GestioneAliquote.DATA_FINE_VALIDITA_APERTA, oggi);
+            impostaFineValiditaGruppo(dataInizioPrecedente, Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA, oggi);
         // il gruppo resta ma l'utente ha cambiato la decorrenza
         } else if (!dataDecorrenza.equals(dataInizioGruppo)) {
             // il precedente ora finisce il giorno prima della nuova decorrenza
             impostaFineValiditaGruppo(dataInizioPrecedente, dataDecorrenza.minusDays(1), oggi);
         }
-    }
-
-    // id della prima riga della richiesta già salvata a DB (validaElencoModifica garantisce che c'è)
-    private Long getIdPrimaAliquotaGiaSalvata(ModificaAliquoteDto modificaAliquote) {
-        for (AliquotaModificaDto aliquotaModifica : modificaAliquote.getScaglioni()) {
-            if (null != aliquotaModifica.getIdAliquota()) {
-                return aliquotaModifica.getIdAliquota();
-            }
-        }
-        return null;
     }
 
     // la decorrenza vale per tutto il gruppo: si aggiorna anche se è cambiata
@@ -183,16 +170,14 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
         gestioneAliquoteDao.updateAliquota(aliquotaSalvata);
     }
 
-    // ------------ IN COMUNE ------------
-
     // nuova riga del gruppo: il mapper copia valori e giorni, qui i campi della storicizzazione
     private WTBAccertamentiAliquotaMora creaAliquota(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza,
                                                     String cfUtente, LocalDate oggi) {
         WTBAccertamentiAliquotaMora nuovaAliquota = customMapper.toAliquotaMora(aliquotaModifica, dataDecorrenza);
-        nuovaAliquota.setDataFineVal(Constants.GestioneAliquote.DATA_FINE_VALIDITA_APERTA);
+        nuovaAliquota.setDataFineVal(Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA);
         nuovaAliquota.setFlagCancella(false);
         nuovaAliquota.setDtInserimento(oggi);
-        nuovaAliquota.setCfInserimento(Utility.getOrDefault(cfUtente, Constants.GestioneAliquote.CF_INSERIMENTO_SISTEMA));
+        nuovaAliquota.setCfInserimento(Utility.getOrDefault(cfUtente, Constants.GestioneParametri.CF_INSERIMENTO_SISTEMA));
         return nuovaAliquota;
     }
 

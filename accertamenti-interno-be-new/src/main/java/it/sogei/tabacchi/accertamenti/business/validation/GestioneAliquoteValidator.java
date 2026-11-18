@@ -1,7 +1,7 @@
 package it.sogei.tabacchi.accertamenti.business.validation;
 
 import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaModificaDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneAliquoteDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
@@ -27,8 +27,8 @@ public class GestioneAliquoteValidator {
     private CommonValidator commonValidator;
 
     // filtri dell'elenco, già normalizzati dal controller (null = filtri vuoti)
-    public void validaFiltriAliquote(FiltriGestioneAliquoteDto filtri) {
-        commonValidator.validaIntervalloDate(filtri.getDataInizioValiditaDa(), filtri.getDataInizioValiditaA(),
+    public void validaFiltriAliquote(FiltriGestioneParametriDto filtriGestioneParametriDto) {
+        commonValidator.validaIntervalloDate(filtriGestioneParametriDto.getDataInizioValiditaDa(), filtriGestioneParametriDto.getDataInizioValiditaA(),
                 Constants.ErrorMessages.INTERVALLO_DECORRENZA_NON_VALIDO);
     }
 
@@ -38,8 +38,11 @@ public class GestioneAliquoteValidator {
         commonValidator.validaObbligatorio(modificaAliquote.getTipoOperazione(), Constants.ErrorMessages.TIPO_OPERAZIONE_OBBLIGATORIO);
     }
 
-    // 2° passo, ramo INSERIMENTO: decorrenza, nessun gruppo futuro già presente, ogni aliquota, continuità dei giorni
+    // 2° passo, ramo INSERIMENTO: nessun id gruppo, decorrenza, nessun gruppo futuro già presente, ogni aliquota, continuità dei giorni
     public void validaInserimentoAliquote(ModificaAliquoteDto modificaAliquote, boolean esisteGruppoModificabile) {
+        if (null != modificaAliquote.getIdGruppo()) {
+            throw new BusinessException(Constants.ErrorMessages.ID_GRUPPO_NON_AMMESSO);
+        }
         validaDataDecorrenza(modificaAliquote.getDataDecorrenza());
         if (esisteGruppoModificabile) {
             throw new BusinessException(ExceptionType.ALIQUOTA_FUTURA_ALREADY_CREATED);
@@ -62,33 +65,35 @@ public class GestioneAliquoteValidator {
         }
     }
 
-    // 2° passo, ramo MODIFICA: elenco presente, senza righe vuote e con almeno una riga già salvata
-    public void validaElencoModifica(List<AliquotaModificaDto> aliquote) {
+    // 2° passo, ramo MODIFICA: id del gruppo presente, elenco presente e senza righe vuote.
+    // Che contenga tutte le righe già salvate lo controlla validaModificaAliquote, col gruppo letto dal DB
+    public void validaElencoModifica(ModificaAliquoteDto modificaAliquote) {
+        commonValidator.validaObbligatorio(modificaAliquote.getIdGruppo(), Constants.ErrorMessages.ID_GRUPPO_OBBLIGATORIO);
+        List<AliquotaModificaDto> aliquote = modificaAliquote.getScaglioni();
         if (null == aliquote || aliquote.isEmpty()) {
             throw new BusinessException(Constants.ErrorMessages.ALIQUOTE_OBBLIGATORIE);
-        } else {
-            boolean isPresenteAliquotaSalvata = false;
-            for (int i = 0; i < aliquote.size(); i++) {
-                commonValidator.validaObbligatorio(aliquote.get(i), String.format(Constants.ErrorMessages.ALIQUOTA_VUOTA, i + 1));
-                if (null != aliquote.get(i).getIdAliquota()) {
-                    isPresenteAliquotaSalvata = true;
-                }
-            }
-            if (!isPresenteAliquotaSalvata) {
-                throw new BusinessException(Constants.ErrorMessages.ALIQUOTE_SALVATE_OBBLIGATORIE);
-            }
+        }
+        for (int i = 0; i < aliquote.size(); i++) {
+            commonValidator.validaObbligatorio(aliquote.get(i), String.format(Constants.ErrorMessages.ALIQUOTA_VUOTA, i + 1));
         }
     }
 
-    // stessa regola di countAliquoteModificabili: decorrenza futura oppure inserita oggi
-    public void validaGruppoModificabile(WTBAccertamentiAliquotaMora aliquotaSalvata) {
-        if (null == aliquotaSalvata || Boolean.TRUE.equals(aliquotaSalvata.getFlagCancella())) {
+    // il gruppo (righe non cancellate con decorrenza ricavata dall'idGruppo) esiste ed è ancora modificabile.
+    // Stessa regola di countAliquoteModificabili: decorrenza futura oppure almeno una riga inserita oggi
+    public void validaGruppoModificabile(List<WTBAccertamentiAliquotaMora> gruppoSalvato, LocalDate dataInizioGruppo) {
+        if (gruppoSalvato.isEmpty()) {
             throw new BusinessException(Constants.ErrorMessages.ALIQUOTE_DA_MODIFICARE_NON_TROVATE);
         }
         LocalDate oggi = LocalDate.now();
-        if (!aliquotaSalvata.getDataInizioVal().isAfter(oggi) && !oggi.equals(aliquotaSalvata.getDtInserimento())) {
+        boolean isInseritoOggi = false;
+        for (WTBAccertamentiAliquotaMora aliquotaSalvata : gruppoSalvato) {
+            if (oggi.equals(aliquotaSalvata.getDtInserimento())) {
+                isInseritoOggi = true;
+            }
+        }
+        if (!dataInizioGruppo.isAfter(oggi) && !isInseritoOggi) {
             throw new BusinessException(String.format(Constants.ErrorMessages.GRUPPO_ALIQUOTE_NON_MODIFICABILE,
-                    Utility.formattaData(aliquotaSalvata.getDataInizioVal())));
+                    Utility.formattaData(dataInizioGruppo)));
         }
     }
 
@@ -166,9 +171,9 @@ public class GestioneAliquoteValidator {
     // le aliquote arrivano in ordine (il frontend calcola "giorni da" dalla riga precedente):
     // la prima parte da 1, ognuna riprende dal giorno dopo la precedente, solo l'ultima è aperta
     private void validaContinuitaGiorni(List<AliquotaModificaDto> aliquote) {
-        if (!Constants.GestioneAliquote.PRIMO_GIORNO_RITARDO.equals(aliquote.get(0).getGiorniDa())) {
+        if (!Constants.GestioneParametri.PRIMO_GIORNO_RITARDO.equals(aliquote.get(0).getGiorniDa())) {
             throw new BusinessException(String.format(Constants.ErrorMessages.PRIMA_ALIQUOTA_NON_DA_PRIMO_GIORNO,
-                    Constants.GestioneAliquote.PRIMO_GIORNO_RITARDO));
+                    Constants.GestioneParametri.PRIMO_GIORNO_RITARDO));
         }
 
         for (int indice = 1; indice < aliquote.size(); indice++) {

@@ -1,16 +1,9 @@
 package it.sogei.tabacchi.accertamenti.mappers;
 
-import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.AliquotaModificaDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.RagioneSocialePIvaDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.*;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.TipoPagamentoDto;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiSoggettiV;
-import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento;
+import it.sogei.tabacchi.accertamenti.business.model.entity.*;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import it.sogei.tabacchi.accertamenti.utility.Utility;
 import org.mapstruct.Mapper;
@@ -62,7 +55,8 @@ public interface CustomMapper {
     PosizioneDto toPosizioneDto(WTBAccertamentiElencoPosizioni posizione);
 
     // riga dell'elenco aliquote: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto.
-    // aliquota, giorniRitardoDa e giorniRitardoA hanno lo stesso nome: MapStruct li copia da solo
+    // idGruppo (calcolato dall'entity al caricamento), aliquota, giorniRitardoDa e giorniRitardoA hanno lo stesso nome:
+    // MapStruct li copia da solo
     @Mapping(target = "idAliquota", source = "id")
     @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(aliquotaMora.getDataInizioVal()))")
     @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(aliquotaMora.getDataFineVal()))")
@@ -83,7 +77,29 @@ public interface CustomMapper {
     @Mapping(target = "cfInserimento", ignore = true)
     @Mapping(target = "dtInserimento", ignore = true)
     @Mapping(target = "dataModifica", ignore = true)
+    @Mapping(target = "idGruppo", ignore = true)
     WTBAccertamentiAliquotaMora toAliquotaMora(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza);
+
+    // riga dell'elenco interessi sul tardato pagamento (idGruppo e tassoInteresse copiati da soli)
+    @Mapping(target = "idInteresse", source = "id")
+    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(interesseRitPagam.getDataInizioVal()))")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(interesseRitPagam.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(interesseRitPagam.getDtInserimento()))")
+    InteresseDto toInteresseDto(WTBAccertamentiInteresseRitPagam interesseRitPagam);
+
+    List<InteresseDto> toInteressiDto(List<WTBAccertamentiInteresseRitPagam> interessiRitPagam);
+
+    // tasso da inserire
+    @Mapping(target = "dataInizioVal", source = "dataDecorrenza")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "dataFineVal", ignore = true)
+    @Mapping(target = "flagCancella", ignore = true)
+    @Mapping(target = "cfInserimento", ignore = true)
+    @Mapping(target = "dtInserimento", ignore = true)
+    @Mapping(target = "dataModifica", ignore = true)
+    // idGruppo dell'entity si calcola solo al caricamento dal DB: quello del DTO (gruppo da modificare) non va copiato
+    @Mapping(target = "idGruppo", ignore = true)
+    WTBAccertamentiInteresseRitPagam toInteresseRitPagam(ModificaInteresseDto modificaInteresseDto);
 
     /* ESEMPIO  */
 

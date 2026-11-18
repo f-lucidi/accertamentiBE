@@ -143,7 +143,22 @@ public class Utility {
 
     // fine validità da mostrare: null se il gruppo è ancora aperto (2999-12-31)
     public static String formattaDataFineValidita(LocalDate dataFineValidita) {
-        return Constants.GestioneAliquote.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : formattaData(dataFineValidita);
+        return Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : formattaData(dataFineValidita);
+    }
+
+    // id del gruppo di parametri (aliquote, interessi...) = decorrenza come numero yyyyMMdd (2027-01-01 -> 20270101).
+    // Non sta sul DB: si ricava dalla decorrenza, unica tra i gruppi non cancellati, e si torna indietro con toDataInizioGruppo
+    public static Integer toIdGruppo(LocalDate dataInizioGruppo) {
+        return null == dataInizioGruppo ? null : Integer.valueOf(dataInizioGruppo.format(DateTimeFormatter.BASIC_ISO_DATE));
+    }
+
+    // inverso di toIdGruppo: 20270101 -> 2027-01-01; un numero che non è una data valida -> 400
+    public static LocalDate toDataInizioGruppo(Integer idGruppo) {
+        try {
+            return LocalDate.parse(String.valueOf(idGruppo), DateTimeFormatter.BASIC_ISO_DATE);
+        } catch (DateTimeParseException e) {
+            throw new BusinessException(String.format(Constants.ErrorMessages.ID_GRUPPO_NON_VALIDO, idGruppo));
+        }
     }
 
     public static String bytesToString(byte[] bytes) {

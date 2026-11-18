@@ -37,10 +37,10 @@ public class Constants {
 
     }
 
-    // regole delle aliquote di mora storicizzate (gruppi con decorrenza e fine validità)
-    public static class GestioneAliquote {
+    // regole dei parametri storicizzati (aliquote di mora, interessi sul tardato pagamento): decorrenza e fine validità
+    public static class GestioneParametri {
 
-        // DATA_FINE_VAL di un gruppo ancora aperto (vigente o futuro): "nessuna fine"
+        // DATA_FINE_VAL di un gruppo (o di un tasso) ancora aperto (vigente o futuro): "nessuna fine"
         public static final LocalDate DATA_FINE_VALIDITA_APERTA = LocalDate.of(2999, 12, 31);
         // CF_INSERIMENTO quando non si conosce l'utente
         public static final String CF_INSERIMENTO_SISTEMA = "SYSTEM";
@@ -93,6 +93,10 @@ public class Constants {
         public static final String ALIQUOTE_LISTA = "/aliquote/lista";
         public static final String ALIQUOTE_SALVA = "/aliquote/salva";
         public static final String ALIQUOTE_INSERIMENTO_ABILITATO = "/aliquote/inserimento-abilitato";
+        /* Interessi sul tardato pagamento */
+        public static final String INTERESSI_LISTA = "/interessi/lista";
+        public static final String INTERESSI_SALVA = "/interessi/salva";
+        public static final String INTERESSI_INSERIMENTO_ABILITATO = "/interessi/inserimento-abilitato";
     }
 
 
@@ -143,12 +147,15 @@ public class Constants {
         /* Utente */
         public static final String UFFICIO_UTENTE_NON_TROVATO = "Ufficio utente non trovato";
 
-        /* Gestione parametri - aliquote di mora (%s = numero dell'aliquota, come nei riquadri del frontend) */
+        /* Gestione parametri - aliquote di mora*/
         public static final String INTERVALLO_DECORRENZA_NON_VALIDO = "La data inizio validità da non può essere successiva alla data inizio validità a.";
         public static final String DATI_ALIQUOTE_OBBLIGATORI = "I dati delle aliquote sono obbligatori.";
         public static final String TIPO_OPERAZIONE_OBBLIGATORIO = "Il tipo operazione è obbligatorio.";
         public static final String DATA_DECORRENZA_OBBLIGATORIA = "La data di decorrenza è obbligatoria.";
         public static final String DATA_DECORRENZA_PASSATA = "La data di decorrenza non può essere nel passato.";
+        public static final String ID_GRUPPO_OBBLIGATORIO = "In modifica l'id del gruppo è obbligatorio.";
+        public static final String ID_GRUPPO_NON_AMMESSO = "In inserimento il gruppo non deve avere un id.";
+        public static final String ID_GRUPPO_NON_VALIDO = "L'id del gruppo %s non è valido.";
         public static final String ALIQUOTE_OBBLIGATORIE = "Indicare almeno un'aliquota.";
         public static final String ALIQUOTA_VUOTA = "Aliquota %s: dati mancanti.";
         public static final String ID_ALIQUOTA_NON_AMMESSO = "Aliquota %s: in inserimento non deve avere un id.";
@@ -160,10 +167,19 @@ public class Constants {
         public static final String SOLO_ULTIMA_ALIQUOTA_APERTA = "Aliquota %s: solo l'ultima aliquota può non avere i giorni di ritardo a.";
         public static final String GIORNI_NON_CONSECUTIVI = "Aliquote %s e %s: i giorni di ritardo devono essere consecutivi, senza buchi né sovrapposizioni.";
         public static final String ULTIMA_ALIQUOTA_NON_APERTA = "Nessuna aliquota definita oltre i %s giorni di ritardo.";
-        public static final String ALIQUOTE_SALVATE_OBBLIGATORIE = "In modifica indicare le aliquote già salvate del gruppo.";
         public static final String ALIQUOTE_DA_MODIFICARE_NON_TROVATE = "Aliquote da modificare non trovate.";
         public static final String GRUPPO_ALIQUOTE_NON_MODIFICABILE = "Le aliquote con decorrenza %s sono già in vigore e non sono più modificabili.";
         public static final String GRUPPO_ALIQUOTE_INCOMPLETO = "Indicare tutte e sole le aliquote già salvate del gruppo.";
         public static final String DECORRENZA_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio delle aliquote precedenti.";
+
+        /* Gestione parametri - interessi sul tardato pagamento */
+        public static final String DATI_INTERESSE_OBBLIGATORI = "I dati del tasso di interesse sono obbligatori.";
+        public static final String TASSO_INTERESSE_OBBLIGATORIO = "Il tasso di interesse è obbligatorio.";
+        public static final String TASSO_INTERESSE_NON_POSITIVO = "Il tasso di interesse deve essere maggiore di zero.";
+        public static final String TASSO_INTERESSE_UGUALE_VIGENTE = "Il tasso di interesse non può essere uguale a quello in vigore (%s).";
+        public static final String CANCELLAZIONE_INTERESSE_NON_AMMESSA = "In inserimento il tasso di interesse non può essere cancellato.";
+        public static final String INTERESSE_NON_TROVATO = "Tasso di interesse da modificare non trovato.";
+        public static final String INTERESSE_NON_MODIFICABILE = "Il tasso di interesse con decorrenza %s è già in vigore e non è più modificabile.";
+        public static final String DECORRENZA_INTERESSE_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio del tasso di interesse precedente.";
     }
 }

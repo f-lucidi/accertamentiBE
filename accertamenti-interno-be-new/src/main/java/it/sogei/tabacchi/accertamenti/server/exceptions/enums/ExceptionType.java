@@ -19,6 +19,7 @@ public enum ExceptionType {
     EXPORT_ERROR("export.error", Response.Status.INTERNAL_SERVER_ERROR),
     ALIQUOTA_FUTURA_ALREADY_CREATED("aliquota.futura.already.created", Response.Status.FORBIDDEN),
     SANZIONE_FUTURA_ALREADY_CREATED("sanzione.futura.already.created", Response.Status.FORBIDDEN),
+    INTERESSE_FUTURO_ALREADY_CREATED("interesse.futuro.already.created", Response.Status.FORBIDDEN),
 
     /* Messaggi che richiedono formattazione: * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     GIORNI_RITARDO_NOT_VALID("giorni.ritardo.not.valid", Response.Status.BAD_REQUEST),

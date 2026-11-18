@@ -1,6 +1,6 @@
 package it.sogei.tabacchi.accertamenti.server.rest.interfaces;
 
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneAliquoteDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
@@ -44,7 +44,7 @@ public interface IGestioneAliquoteService {
             @Parameter(description = "Elementi per pagina; se assente o < 1 usa il default (10), massimo 100", example = "10")
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri; {} = nessun filtro", required = true)
-            FiltriGestioneAliquoteDto filtri);
+            FiltriGestioneParametriDto filtriGestioneParametriDto);
 
     @GET
     @Path(Constants.Endpoint.ALIQUOTE_INSERIMENTO_ABILITATO)
@@ -64,7 +64,7 @@ public interface IGestioneAliquoteService {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Salva un gruppo di aliquote di mora",
             description = "INSERIMENTO: crea il gruppo dalla data di decorrenza e chiude il gruppo precedente. "
-                    + "MODIFICA: aggiorna, aggiunge o cancella le righe di un gruppo ancora modificabile; "
+                    + "MODIFICA: aggiorna, aggiunge o cancella le righe del gruppo indicato da idGruppo (ancora modificabile); "
                     + "se le cancella tutte riapre il gruppo precedente.")
     @APIResponses({
             @APIResponse(responseCode = "200", description = "Gruppo salvato"),
@@ -73,6 +73,6 @@ public interface IGestioneAliquoteService {
             @APIResponse(responseCode = "403", description = "Esiste già un gruppo di aliquote modificabile")
     })
     Response salvaAliquote(
-            @RequestBody(description = "Tipo operazione, data di decorrenza e aliquote (\"scaglioni\")", required = true)
+            @RequestBody(description = "Tipo operazione, id del gruppo (solo in MODIFICA, come ricevuto dall'elenco), data di decorrenza e aliquote (\"scaglioni\")", required = true)
             ModificaAliquoteDto modificaAliquote);
 }

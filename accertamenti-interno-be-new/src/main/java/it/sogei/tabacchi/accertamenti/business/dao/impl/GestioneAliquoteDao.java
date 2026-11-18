@@ -3,7 +3,7 @@ package it.sogei.tabacchi.accertamenti.business.dao.impl;
 import it.sogei.tabacchi.accertamenti.business.dao.CriteriaQueryBuilder;
 import it.sogei.tabacchi.accertamenti.business.dao.CriteriaQueryManager;
 import it.sogei.tabacchi.accertamenti.business.dao.interfaces.IGestioneAliquoteDao;
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneAliquoteDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiAliquotaMora_;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
@@ -24,8 +24,8 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
 
     // gruppi più recenti prima, dentro il gruppo gli scaglioni in ordine di giorni
     @Override
-    public List<WTBAccertamentiAliquotaMora> findAliquote(FiltriGestioneAliquoteDto filtri, int pagina, int elementiPerPagina) {
-        return applicaFiltriAliquote(queryManager.createBuilder(WTBAccertamentiAliquotaMora.class), filtri)
+    public List<WTBAccertamentiAliquotaMora> findAliquote(FiltriGestioneParametriDto filtriGestioneParametriDto, int pagina, int elementiPerPagina) {
+        return applicaFiltriAliquote(queryManager.createBuilder(WTBAccertamentiAliquotaMora.class), filtriGestioneParametriDto)
                 .orderByDesc(WTBAccertamentiAliquotaMora_.dataInizioVal)
                 .orderByAsc(WTBAccertamentiAliquotaMora_.giorniRitardoDa)
                 .orderByAsc(WTBAccertamentiAliquotaMora_.id)
@@ -34,27 +34,27 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
 
     // selectCount prima dei filtri, come in countElencoPosizioni
     @Override
-    public Long countAliquote(FiltriGestioneAliquoteDto filtri) {
-        return applicaFiltriAliquote(queryManager.createBuilder(WTBAccertamentiAliquotaMora.class).selectCount(), filtri)
+    public Long countAliquote(FiltriGestioneParametriDto filtriGestioneParametriDto) {
+        return applicaFiltriAliquote(queryManager.createBuilder(WTBAccertamentiAliquotaMora.class).selectCount(), filtriGestioneParametriDto)
                 .getSingleResult();
     }
 
     // filtri comuni a find e count: con addConditionsWhenValueIsNull(false) i valori null vengono saltati
     private CriteriaQueryBuilder<WTBAccertamentiAliquotaMora> applicaFiltriAliquote(
-            CriteriaQueryBuilder<WTBAccertamentiAliquotaMora> builder, FiltriGestioneAliquoteDto filtri) {
+            CriteriaQueryBuilder<WTBAccertamentiAliquotaMora> builder, FiltriGestioneParametriDto filtriGestioneParametriDto) {
         // anno -> dal 1 gennaio al 31 dicembre; null se l'anno non è scelto
-        LocalDate primoGiornoAnno = null != filtri.getAnno() ? LocalDate.of(filtri.getAnno(), 1, 1) : null;
-        LocalDate ultimoGiornoAnno = null != filtri.getAnno() ? LocalDate.of(filtri.getAnno(), 12, 31) : null;
+        LocalDate primoGiornoAnno = null != filtriGestioneParametriDto.getAnno() ? LocalDate.of(filtriGestioneParametriDto.getAnno(), 1, 1) : null;
+        LocalDate ultimoGiornoAnno = null != filtriGestioneParametriDto.getAnno() ? LocalDate.of(filtriGestioneParametriDto.getAnno(), 12, 31) : null;
 
         return builder
                 .addConditionsWhenValueIsNull(false)
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.flagCancella, false)
                 // decorrenza compresa tra Da e A
-                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtri.getDataInizioValiditaDa())
-                .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtri.getDataInizioValiditaA())
+                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
+                .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaA())
                 // vigenti alla data: iniziate entro quel giorno e non ancora finite (la fine è l'ultimo giorno valido)
-                .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtri.getDataRiferimento())
-                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataFineVal, filtri.getDataRiferimento())
+                .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataRiferimento())
+                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataFineVal, filtriGestioneParametriDto.getDataRiferimento())
                 // validità che tocca almeno un giorno dell'anno
                 .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, ultimoGiornoAnno)
                 .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataFineVal, primoGiornoAnno);
@@ -90,11 +90,6 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.flagCancella, false)
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, dataInizio)
                 .getResultList();
-    }
-
-    @Override
-    public WTBAccertamentiAliquotaMora findAliquotaById(Long idAliquota) {
-        return queryManager.findById(WTBAccertamentiAliquotaMora.class, idAliquota);
     }
 
     // saveImmediately fa subito il flush: un errore del DB esce qui e non al commit

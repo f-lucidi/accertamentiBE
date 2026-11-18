@@ -1,7 +1,7 @@
 package it.sogei.tabacchi.accertamenti.server.rest.impl;
 
 import it.sogei.tabacchi.accertamenti.business.controllers.interfaces.IGestioneAliquoteController;
-import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneAliquoteDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.UserInfo;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
@@ -20,8 +20,8 @@ public class GestioneAliquoteService extends AbstractService implements IGestion
     private IGestioneAliquoteController gestioneAliquoteController;
 
     @Override
-    public Response findAliquote(Integer pagina, Integer elementiPerPagina, FiltriGestioneAliquoteDto filtri) {
-        return ok(gestioneAliquoteController.findAliquote(filtri, pagina, elementiPerPagina));
+    public Response findAliquote(Integer pagina, Integer elementiPerPagina, FiltriGestioneParametriDto filtriGestioneParametriDto) {
+        return ok(gestioneAliquoteController.findAliquote(filtriGestioneParametriDto, pagina, elementiPerPagina));
     }
 
     @Override

@@ -8,6 +8,9 @@ import java.math.BigDecimal;
 // Date già formattate dd/MM/yyyy: il frontend le mostra così come arrivano
 @Data
 public class AliquotaDto {
+    // id del gruppo (decorrenza yyyyMMdd, es. 20270101), uguale su tutte le righe del gruppo:
+    // il frontend lo rimanda in ModificaAliquoteDto per operare sul gruppo
+    private Integer idGruppo;
     private Long idAliquota;
     private BigDecimal aliquota;
     private Integer giorniRitardoDa;
