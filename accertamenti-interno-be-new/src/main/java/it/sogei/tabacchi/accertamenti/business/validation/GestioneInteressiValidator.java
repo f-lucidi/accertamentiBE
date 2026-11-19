@@ -12,10 +12,13 @@ import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
-// validazioni degli interessi sul tardato pagamento. Nessun metodo lancia eccezioni: ogni regola violata aggiunge
-// il suo messaggio alla lista errori creata dal controller, che la riceve indietro e lancia una sola BusinessException.
+// validazioni degli interessi sul tardato pagamento.
+// Ogni metodo pubblico è una fase: void, raccoglie gli errori in una lista propria e se non è vuota lancia lui
+// la BusinessException con i messaggi concatenati (commonValidator.checkAndThrowIfErrors); il controller li chiama in fila.
+// I metodi privati sono regole riusate da più fasi: aggiungono alla lista ricevuta e non lanciano.
 // Non legge il DB: i dati che servono (es. interesse precedente) li passa il controller
 @Dependent
 @LogMethodInvocation(logParameters = false)
@@ -25,8 +28,10 @@ public class GestioneInteressiValidator {
     private CommonValidator commonValidator;
 
     // filtri dell'elenco interessi (date di decorrenza da/a coerenti)
-    public List<String> validaFiltri(FiltriGestioneParametriDto filtriGestioneParametriDto, List<String> errori) {
-        return commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto, errori);
+    public void validaFiltri(FiltriGestioneParametriDto filtriGestioneParametriDto) {
+        List<String> errori = new ArrayList<>();
+        commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto, errori);
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // Body e tipo operazione li controlla Bean Validation prima del controller:
@@ -36,7 +41,8 @@ public class GestioneInteressiValidator {
     // Che non esista già un interesse modificabile lo controlla prima il controller (errore 403, non sui dati).
     // Il confronto col precedente è a parte (validaTassoDiversoDaPrecedente): il precedente si cerca con la decorrenza,
     // che deve essere già valida per usarla in una query
-    public List<String> validaInserimentoInteresse(ModificaInteresseDto modificaInteresseDto, List<String> errori) {
+    public void validaInserimentoInteresse(ModificaInteresseDto modificaInteresseDto) {
+        List<String> errori = new ArrayList<>();
         if (null != modificaInteresseDto.getIdGruppo()) {
             errori.add(Constants.ErrorMessages.ID_GRUPPO_NON_AMMESSO);
         }
@@ -48,32 +54,30 @@ public class GestioneInteressiValidator {
         }
         commonValidator.validaDataDecorrenza(modificaInteresseDto.getDataDecorrenza(), errori);
         commonValidator.validaTasso(modificaInteresseDto.getTassoInteresse(), errori);
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
-    // 3° passo: il nuovo tasso (già validato, non null) non può ripetere quello precedente;
-    // interessePrecedente letto dal controller, null = nessun vincolo.
-    // compareTo e non equals: per BigDecimal equals considera diversi 2.0 e 2.00
-    public List<String> validaTassoDiversoDaPrecedente(BigDecimal tassoInteresse, WTBAccertamentiInteresseRitPagam interessePrecedente,
-                                                       List<String> errori) {
-        if (null != interessePrecedente && 0 == tassoInteresse.compareTo(interessePrecedente.getTassoInteresse())) {
-            errori.add(String.format(Constants.ErrorMessages.TASSO_INTERESSE_UGUALE_VIGENTE,
-                    interessePrecedente.getTassoInteresse().toPlainString()));
-        }
-        return errori;
+    // 3° passo, ramo INSERIMENTO: il nuovo tasso (già validato, non null) non può ripetere quello precedente;
+    // interessePrecedente letto dal controller, null = nessun vincolo
+    public void validaTassoDiversoDaPrecedente(BigDecimal tassoInteresse, WTBAccertamentiInteresseRitPagam interessePrecedente) {
+        List<String> errori = new ArrayList<>();
+        aggiungiErroreTassoUgualePrecedente(tassoInteresse, interessePrecedente, errori);
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // 2° passo, ramo MODIFICA, prima di leggere il DB: l'id dell'interesse da modificare.
     // L'idGruppo non serve: a differenza delle aliquote ogni decorrenza ha una sola riga, l'id basta a trovarla
-    public List<String> validaRichiestaModifica(ModificaInteresseDto modificaInteresseDto, List<String> errori) {
+    public void validaRichiestaModifica(ModificaInteresseDto modificaInteresseDto) {
+        List<String> errori = new ArrayList<>();
         commonValidator.validaObbligatorio(modificaInteresseDto.getIdInteresse(), Constants.ErrorMessages.ID_INTERESSE_OBBLIGATORIO, errori);
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // 3° passo, ramo MODIFICA: l'interesse letto per id esiste, non è cancellato ed è ancora modificabile.
     // findById restituisce anche le righe cancellate: per il frontend una riga cancellata non esiste.
     // Stessa regola di countInteressiModificabili: decorrenza futura oppure inserito oggi
-    public List<String> validaInteresseModificabile(WTBAccertamentiInteresseRitPagam interesseSalvato, List<String> errori) {
+    public void validaInteresseModificabile(WTBAccertamentiInteresseRitPagam interesseSalvato) {
+        List<String> errori = new ArrayList<>();
         LocalDate oggi = LocalDate.now();
         if (null == interesseSalvato || Boolean.TRUE.equals(interesseSalvato.getFlagCancella())) {
             errori.add(Constants.ErrorMessages.INTERESSE_NON_TROVATO);
@@ -81,13 +85,14 @@ public class GestioneInteressiValidator {
             errori.add(String.format(Constants.ErrorMessages.INTERESSE_NON_MODIFICABILE,
                     Utility.formattaData(interesseSalvato.getDataInizioVal())));
         }
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // 4° passo, ramo MODIFICA quando non è una cancellazione: nuova decorrenza (valida e successiva al precedente)
-    // e nuovo tasso (valido e diverso dal precedente). interessePrecedente letto dal controller, null = nessun vincolo
-    public List<String> validaModificaInteresse(ModificaInteresseDto modificaInteresseDto, WTBAccertamentiInteresseRitPagam interessePrecedente,
-                                                List<String> errori) {
+    // e nuovo tasso (valido e diverso dal precedente), tutti gli errori insieme.
+    // interessePrecedente letto dal controller, null = nessun vincolo
+    public void validaModificaInteresse(ModificaInteresseDto modificaInteresseDto, WTBAccertamentiInteresseRitPagam interessePrecedente) {
+        List<String> errori = new ArrayList<>();
         LocalDate dataDecorrenza = modificaInteresseDto.getDataDecorrenza();
         // il confronto col precedente ha senso solo su una decorrenza valida
         if (commonValidator.validaDataDecorrenza(dataDecorrenza, errori)) {
@@ -97,8 +102,19 @@ public class GestioneInteressiValidator {
         }
         // e sul tasso solo se il tasso c'è ed è positivo
         if (commonValidator.validaTasso(modificaInteresseDto.getTassoInteresse(), errori)) {
-            validaTassoDiversoDaPrecedente(modificaInteresseDto.getTassoInteresse(), interessePrecedente, errori);
+            aggiungiErroreTassoUgualePrecedente(modificaInteresseDto.getTassoInteresse(), interessePrecedente, errori);
         }
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
+    }
+
+    // regola usata da inserimento e modifica: aggiunge alla lista ricevuta, non lancia
+    // (in modifica gli errori vanno uniti a quelli sulla decorrenza).
+    // compareTo e non equals: per BigDecimal equals considera diversi 2.0 e 2.00
+    private void aggiungiErroreTassoUgualePrecedente(BigDecimal tassoInteresse, WTBAccertamentiInteresseRitPagam interessePrecedente,
+                                                     List<String> errori) {
+        if (null != interessePrecedente && 0 == tassoInteresse.compareTo(interessePrecedente.getTassoInteresse())) {
+            errori.add(String.format(Constants.ErrorMessages.TASSO_INTERESSE_UGUALE_VIGENTE,
+                    interessePrecedente.getTassoInteresse().toPlainString()));
+        }
     }
 }

@@ -20,7 +20,6 @@ import it.sogei.tabacchi.accertamenti.utility.Utility;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RequestScoped
@@ -30,6 +29,7 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
     @Inject
     private IConsultazioneImposteDao consultazioneImposteDao;
 
+    // ogni fase di validazione lancia lei la BusinessException se trova errori: qui non servono liste
     @Inject
     private ConsultazioneImposteValidator validator;
 
@@ -43,16 +43,14 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
 
     @Override
     public String getDescrizioneCategoria(String categoriaProdotto) {
-        List<String> errori = new ArrayList<>();
-        Utility.checkAndThrowIfErrors(validator.validaCategoriaProdotto(categoriaProdotto, errori));
+        validator.validaCategoriaProdotto(categoriaProdotto);
         WTBAccertamentiCategorieProd categoria = consultazioneImposteDao.findCategoriaBySigla(categoriaProdotto);
         return null != categoria ? categoria.getDescrizione() : Constants.CATEGORIA_PRODOTTO_NON_DISPONIBILE;
     }
 
     @Override
     public ListeFiltriRicercaDto getFiltriRicerca(String categoriaProdotto, String annoContabile) {
-        List<String> errori = new ArrayList<>();
-        Utility.checkAndThrowIfErrors(validator.validaCategoriaProdotto(categoriaProdotto, errori));
+        validator.validaCategoriaProdotto(categoriaProdotto);
         String sigla = risolviSiglaCategoria(categoriaProdotto);
         // anno facoltativo: se presente la lista contiene solo i soggetti attivi in quell'anno
         Integer anno = Utility.parseInteger(annoContabile, "annoContabile");
@@ -67,13 +65,12 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
     @Override
     public RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
                                                                      Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
-        List<String> errori = new ArrayList<>();
         // categoria + filtri, senza DB: presenza e almeno un criterio
-        Utility.checkAndThrowIfErrors(validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto, errori));
+        validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto);
         String sigla = risolviSiglaCategoria(categoriaProdotto);
         // stringhe del FE -> valori tipizzati, una volta sola (gli errori di formato vengono lanciati qui)
         CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, parametriFiltriRicercaDto);
-        Utility.checkAndThrowIfErrors(validator.validaCriteriRicerca(criteri, errori));
+        validator.validaCriteriRicerca(criteri);
         int pagina = Utility.normalizzaPagina(paginaRichiesta);
         int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
         List<WTBAccertamentiElencoPosizioni> posizioni = consultazioneImposteDao.findElencoPosizioni(criteri, pagina, elementiPerPagina);

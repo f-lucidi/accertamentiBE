@@ -8,7 +8,6 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaInteresseLegale
 import it.sogei.tabacchi.accertamenti.business.model.dto.PrimoAnnoMancanteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiInteresseLegale;
-import it.sogei.tabacchi.accertamenti.business.model.enums.TipoOperazione;
 import it.sogei.tabacchi.accertamenti.business.validation.GestioneInteressiLegaliValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
@@ -19,7 +18,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @RequestScoped
@@ -80,8 +78,10 @@ public class GestioneInteressiLegaliController implements IGestioneInteressiLega
             }
         }
         // nessun buco: l'anno dopo l'ultimo; nessun anno (annoAtteso mai valorizzato): l'anno corrente
-        return null != primoAnnoMancante ? primoAnnoMancante
-                : null != annoAtteso ? annoAtteso
+        return null != primoAnnoMancante
+                ? primoAnnoMancante
+                : null != annoAtteso
+                ? annoAtteso
                 : LocalDate.now().getYear();
     }
 
@@ -91,24 +91,22 @@ public class GestioneInteressiLegaliController implements IGestioneInteressiLega
     @Override
     @Transactional
     public void scriviInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto, String cfUtente) {
-        // lista degli errori di validazione della richiesta: la riempiono i validator, a ogni fase si lancia se non è vuota
-        List<String> errori = new ArrayList<>();
-        // body e tipo operazione già garantiti da Bean Validation (@Valid sul service)
-        if (TipoOperazione.INSERIMENTO == modificaInteresseLegaleDto.getTipoOperazione()) {
-            inserisciInteresseLegale(modificaInteresseLegaleDto, cfUtente, errori);
-        } else {
-            modificaInteresseLegale(modificaInteresseLegaleDto, errori);
+        // body e tipo operazione già garantiti da Bean Validation (@Valid sul service).
+        // Ogni fase di validazione lancia lei la BusinessException se trova errori: qui non serve una lista
+        switch (modificaInteresseLegaleDto.getTipoOperazione()) {
+            case INSERIMENTO -> inserisciInteresseLegale(modificaInteresseLegaleDto, cfUtente);
+            case MODIFICA -> modificaInteresseLegale(modificaInteresseLegaleDto);
         }
     }
 
     // ------------ INSERIMENTO ------------
 
-    private void inserisciInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto, String cfUtente, List<String> errori) {
+    private void inserisciInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto, String cfUtente) {
         // id, cancellazione, anno, tasso: tutti gli errori insieme
-        Utility.checkAndThrowIfErrors(validator.validaInserimentoInteresseLegale(modificaInteresseLegaleDto, errori));
+        validator.validaInserimentoInteresseLegale(modificaInteresseLegaleDto);
         // un solo tasso per anno: l'anno (ora valido) non deve averne già uno
-        Utility.checkAndThrowIfErrors(validator.validaAnnoLibero(modificaInteresseLegaleDto.getAnno(),
-                isAnnoOccupato(modificaInteresseLegaleDto.getAnno()), errori));
+        boolean isInteressePresenteInAnno = gestioneInteressiLegaliDao.countInteressiLegaliByAnno(modificaInteresseLegaleDto.getAnno()) > 0;
+        validator.validaAnnoLibero(modificaInteresseLegaleDto.getAnno(), isInteressePresenteInAnno);
         gestioneInteressiLegaliDao.insertInteresseLegale(creaInteresseLegale(modificaInteresseLegaleDto, cfUtente));
     }
 
@@ -126,18 +124,18 @@ public class GestioneInteressiLegaliController implements IGestioneInteressiLega
     // MODIFICA di un interesse legale ancora modificabile, riconosciuto dal suo id:
     // aggiorna il tasso, oppure lo cancella (flagCancella). L'anno non si modifica,
     // quindi l'anno della richiesta è ignorato.
-    private void modificaInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto, List<String> errori) {
+    private void modificaInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto) {
         // id dell'interesse presente
-        Utility.checkAndThrowIfErrors(validator.validaRichiestaModifica(modificaInteresseLegaleDto, errori));
+        validator.validaRichiestaModifica(modificaInteresseLegaleDto);
         WTBAccertamentiInteresseLegale interesseLegaleSalvato = gestioneInteressiLegaliDao.findInteresseLegaleById(modificaInteresseLegaleDto.getIdInteresse());
         // esiste, non è cancellato ed è ancora modificabile (anno futuro o inserito oggi)
-        Utility.checkAndThrowIfErrors(validator.validaInteresseLegaleModificabile(interesseLegaleSalvato, errori));
+        validator.validaInteresseLegaleModificabile(interesseLegaleSalvato);
         // tolto col cestino: niente da validare sui valori
         if (Boolean.TRUE.equals(modificaInteresseLegaleDto.getFlagCancella())) {
             cancellaInteresseLegale(interesseLegaleSalvato);
         } else {
             // solo il tasso
-            Utility.checkAndThrowIfErrors(validator.validaModificaInteresseLegale(modificaInteresseLegaleDto, errori));
+            validator.validaModificaInteresseLegale(modificaInteresseLegaleDto);
             aggiornaInteresseLegale(interesseLegaleSalvato, modificaInteresseLegaleDto);
         }
     }
@@ -154,10 +152,5 @@ public class GestioneInteressiLegaliController implements IGestioneInteressiLega
         interesseLegaleSalvato.setFlagCancella(Constants.GestioneParametri.FLAG_CANCELLA_SI);
         interesseLegaleSalvato.setDataModifica(LocalDate.now());
         gestioneInteressiLegaliDao.updateInteresseLegale(interesseLegaleSalvato);
-    }
-
-    // l'anno ha già un tasso non cancellato
-    private boolean isAnnoOccupato(Integer anno) {
-        return gestioneInteressiLegaliDao.countInteressiLegaliByAnno(anno) > 0;
     }
 }

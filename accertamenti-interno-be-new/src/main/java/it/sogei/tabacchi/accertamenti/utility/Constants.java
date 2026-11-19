@@ -54,6 +54,14 @@ public class Constants {
         public static final Integer FLAG_CANCELLA_SI = 1;
         // tasso proposto per il primo anno mancante quando l'anno corrente non ha un interesse legale
         public static final BigDecimal TASSO_INTERESSE_LEGALE_DEFAULT = new BigDecimal("0.2");
+        // nomi degli scaglioni nei messaggi di errore condivisi (CommonValidator): singolare e plurale, minuscoli
+        public static final String NOME_ALIQUOTA = "aliquota";
+        public static final String NOME_ALIQUOTE = "aliquote";
+        public static final String NOME_SANZIONE = "sanzione";
+        public static final String NOME_SANZIONI = "sanzioni";
+        // W_TB_ACCERTAMENTI_SANZIONI.MOLTIPLICATO_PER_GIORNI_RITARDO (numerico): 1 = sì, 0 = no
+        public static final Integer MOLTIPLICATO_PER_GIORNI_SI = 1;
+        public static final Integer MOLTIPLICATO_PER_GIORNI_NO = 0;
 
     }
 
@@ -110,6 +118,10 @@ public class Constants {
         public static final String INTERESSI_LEGALI_LISTA = "/interessi-legali/lista";
         public static final String INTERESSI_LEGALI_MODIFICA = "/interessi-legali/modifica";
         public static final String INTERESSI_LEGALI_PRIMO_ANNO_MANCANTE = "/interessi-legali/primo-anno-mancante";
+        /* Sanzioni */
+        public static final String SANZIONI_LISTA = "/sanzioni/lista";
+        public static final String SANZIONI_MODIFICA = "/sanzioni/modifica";
+        public static final String SANZIONI_INSERIMENTO_ABILITATO = "/sanzioni/inserimento-abilitato";
         /* Anni per il box di ricerca */
         public static final String ANNI = "/anni";
     }
@@ -175,20 +187,31 @@ public class Constants {
         public static final String ID_GRUPPO_NON_AMMESSO = "In inserimento il gruppo non deve avere un id.";
         public static final String ID_GRUPPO_NON_VALIDO = "L'id del gruppo %s non è valido.";
         public static final String ALIQUOTE_OBBLIGATORIE = "Indicare almeno un'aliquota.";
-        public static final String ALIQUOTA_VUOTA = "Aliquota %s: dati mancanti.";
-        public static final String ID_ALIQUOTA_NON_AMMESSO = "Aliquota %s: in inserimento non deve avere un id.";
-        public static final String VALORE_ALIQUOTA_OBBLIGATORIO = "Aliquota %s: il valore è obbligatorio.";
-        public static final String VALORE_ALIQUOTA_NON_POSITIVO = "Aliquota %s: il valore deve essere maggiore di zero.";
-        public static final String GIORNI_DA_OBBLIGATORIO = "Aliquota %s: i giorni di ritardo da sono obbligatori.";
-        public static final String GIORNI_A_NON_VALIDO = "Aliquota %s: i giorni di ritardo a devono essere maggiori dei giorni di ritardo da.";
-        public static final String PRIMA_ALIQUOTA_NON_DA_PRIMO_GIORNO = "La prima aliquota deve partire da %s giorno di ritardo.";
-        public static final String SOLO_ULTIMA_ALIQUOTA_APERTA = "Aliquota %s: solo l'ultima aliquota può non avere i giorni di ritardo a.";
-        public static final String GIORNI_NON_CONSECUTIVI = "Aliquote %s e %s: i giorni di ritardo devono essere consecutivi, senza buchi né sovrapposizioni.";
-        public static final String ULTIMA_ALIQUOTA_NON_APERTA = "Nessuna aliquota definita oltre i %s giorni di ritardo.";
         public static final String ALIQUOTE_DA_MODIFICARE_NON_TROVATE = "Aliquote da modificare non trovate.";
         public static final String GRUPPO_ALIQUOTE_NON_MODIFICABILE = "Le aliquote con decorrenza %s sono già in vigore e non sono più modificabili.";
         public static final String GRUPPO_ALIQUOTE_INCOMPLETO = "Indicare tutte e sole le aliquote già salvate del gruppo.";
         public static final String DECORRENZA_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio delle aliquote precedenti.";
+
+        /* Gestione parametri - righe dei gruppi a scaglioni (aliquote, sanzioni).
+           %s del nome: NOME_ALIQUOTA/NOME_SANZIONE (o il plurale), già con la maiuscola dove inizia la frase */
+        public static final String SCAGLIONE_VUOTO = "%s %s: dati mancanti.";
+        public static final String ID_SCAGLIONE_NON_AMMESSO = "%s %s: in inserimento non deve avere un id.";
+        public static final String VALORE_SCAGLIONE_OBBLIGATORIO = "%s %s: il valore è obbligatorio.";
+        public static final String VALORE_SCAGLIONE_NON_POSITIVO = "%s %s: il valore deve essere maggiore di zero.";
+        public static final String GIORNI_DA_OBBLIGATORIO = "%s %s: i giorni di ritardo da sono obbligatori.";
+        public static final String GIORNI_A_NON_VALIDO = "%s %s: i giorni di ritardo a devono essere maggiori dei giorni di ritardo da.";
+        public static final String PRIMO_SCAGLIONE_NON_DA_PRIMO_GIORNO = "La prima %s deve partire da %s giorno di ritardo.";
+        public static final String SOLO_ULTIMO_SCAGLIONE_APERTO = "%s %s: solo l'ultima %s può non avere i giorni di ritardo a.";
+        public static final String GIORNI_NON_CONSECUTIVI = "%s %s e %s: i giorni di ritardo devono essere consecutivi, senza buchi né sovrapposizioni.";
+        public static final String ULTIMO_SCAGLIONE_NON_APERTO = "Nessuna %s definita oltre i %s giorni di ritardo.";
+
+        /* Gestione parametri - sanzioni */
+        public static final String DATI_SANZIONI_OBBLIGATORI = "I dati delle sanzioni sono obbligatori.";
+        public static final String SANZIONI_OBBLIGATORIE = "Indicare almeno una sanzione.";
+        public static final String SANZIONI_DA_MODIFICARE_NON_TROVATE = "Sanzioni da modificare non trovate.";
+        public static final String GRUPPO_SANZIONI_NON_MODIFICABILE = "Le sanzioni con decorrenza %s sono già in vigore e non sono più modificabili.";
+        public static final String GRUPPO_SANZIONI_INCOMPLETO = "Indicare tutte e sole le sanzioni già salvate del gruppo.";
+        public static final String DECORRENZA_SANZIONI_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio delle sanzioni precedenti.";
 
         /* Gestione parametri - interessi sul tardato pagamento */
         public static final String DATI_INTERESSE_OBBLIGATORI = "I dati del tasso di interesse sono obbligatori.";

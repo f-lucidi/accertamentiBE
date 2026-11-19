@@ -12,7 +12,7 @@ public interface IGestioneInteressiLegaliDao {
 
     Long countInteressiLegali(FiltriGestioneParametriDto filtriGestioneParametriDto);
 
-    // interessi non cancellati di quell'anno: > 0 = anno già occupato
+    // interessi non cancellati di quell'anno: > 0 = interesse già presente nell'anno
     Long countInteressiLegaliByAnno(Integer anno);
 
     // l'interesse non cancellato di quell'anno, null se non esiste

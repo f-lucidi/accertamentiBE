@@ -7,7 +7,6 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.InteresseDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaInteresseDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiInteresseRitPagam;
-import it.sogei.tabacchi.accertamenti.business.model.enums.TipoOperazione;
 import it.sogei.tabacchi.accertamenti.business.validation.GestioneInteressiValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
@@ -20,7 +19,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @RequestScoped
@@ -33,6 +31,7 @@ public class GestioneInteressiController implements IGestioneInteressiController
     @Inject
     private CustomMapper customMapper;
 
+    // ogni fase di validazione lancia lei la BusinessException se trova errori: qui non servono liste
     @Inject
     private GestioneInteressiValidator validator;
 
@@ -43,8 +42,7 @@ public class GestioneInteressiController implements IGestioneInteressiController
                                                             Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         // body JSON null = nessun filtro, come {} (tutti gli interessi con flagCancella = false)
         FiltriGestioneParametriDto filtriGestioneParametriDto = Utility.getOrDefault(filtriGestioneParametriDtoRichiesto, new FiltriGestioneParametriDto());
-        List<String> errori = new ArrayList<>();
-        Utility.checkAndThrowIfErrors(validator.validaFiltri(filtriGestioneParametriDto, errori));
+        validator.validaFiltri(filtriGestioneParametriDto);
         int pagina = Utility.normalizzaPagina(paginaRichiesta);
         int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
         List<WTBAccertamentiInteresseRitPagam> interessi = gestioneInteressiDao.findInteressi(filtriGestioneParametriDto, pagina, elementiPerPagina);
@@ -62,31 +60,28 @@ public class GestioneInteressiController implements IGestioneInteressiController
     @Transactional
     @Override
     public void scriviInteresse(ModificaInteresseDto modificaInteresseDto, String cfUtente){
-        // lista degli errori di validazione della richiesta: la riempiono i validator, a ogni fase si lancia se non è vuota
-        List<String> errori = new ArrayList<>();
         // body e tipo operazione già garantiti da Bean Validation (@Valid sul service)
-        if (TipoOperazione.INSERIMENTO == modificaInteresseDto.getTipoOperazione()) {
-            inserisciInteresse(modificaInteresseDto, cfUtente, errori);
-        } else {
-            modificaInteresse(modificaInteresseDto, errori);
+        switch (modificaInteresseDto.getTipoOperazione()) {
+            case INSERIMENTO -> inserisciInteresse(modificaInteresseDto, cfUtente);
+            case MODIFICA -> modificaInteresse(modificaInteresseDto);
         }
     }
 
     // ------------ INSERIMENTO ------------
 
-    private void inserisciInteresse(ModificaInteresseDto modificaInteresseDto, String cfUtente, List<String> errori){
+    private void inserisciInteresse(ModificaInteresseDto modificaInteresseDto, String cfUtente){
         // errore di stato e non sui dati (403): esiste già un interesse futuro o inserito oggi
         if (!isInserimentoInteressiAbilitato()) {
             throw new BusinessException(ExceptionType.INTERESSE_FUTURO_ALREADY_CREATED);
         }
         // id, cancellazione, decorrenza, tasso: tutti gli errori insieme
-        Utility.checkAndThrowIfErrors(validator.validaInserimentoInteresse(modificaInteresseDto, errori));
+        validator.validaInserimentoInteresse(modificaInteresseDto);
         // una sola data per tutte le scritture
         LocalDate oggi = LocalDate.now();
         LocalDate dataDecorrenza = modificaInteresseDto.getDataDecorrenza();
         // interesse che precede la nuova decorrenza (null se non c'è): il nuovo tasso non può ripeterlo e alla fine va chiuso
         WTBAccertamentiInteresseRitPagam interessePrecedente = findInteressePrecedente(dataDecorrenza);
-        Utility.checkAndThrowIfErrors(validator.validaTassoDiversoDaPrecedente(modificaInteresseDto.getTassoInteresse(), interessePrecedente, errori));
+        validator.validaTassoDiversoDaPrecedente(modificaInteresseDto.getTassoInteresse(), interessePrecedente);
         gestioneInteressiDao.insertInteresse(creaInteresse(modificaInteresseDto, cfUtente, oggi));
         // il precedente finisce il giorno prima della nuova decorrenza: così ogni giorno ha un solo tasso vigente
         impostaFineValidita(interessePrecedente, dataDecorrenza.minusDays(1), oggi);
@@ -115,12 +110,12 @@ public class GestioneInteressiController implements IGestioneInteressiController
 
     // MODIFICA di un interesse ancora modificabile, riconosciuto dal suo id (una sola riga per decorrenza, niente blocco):
     // aggiorna tasso e decorrenza, oppure lo cancella (flagCancella) riaprendo il precedente
-    private void modificaInteresse(ModificaInteresseDto modificaInteresseDto, List<String> errori) {
+    private void modificaInteresse(ModificaInteresseDto modificaInteresseDto) {
         // id dell'interesse presente
-        Utility.checkAndThrowIfErrors(validator.validaRichiestaModifica(modificaInteresseDto, errori));
+        validator.validaRichiestaModifica(modificaInteresseDto);
         WTBAccertamentiInteresseRitPagam interesseSalvato = gestioneInteressiDao.findInteresseById(modificaInteresseDto.getIdInteresse());
         // esiste, non è cancellato ed è ancora modificabile (decorrenza futura o inserito oggi)
-        Utility.checkAndThrowIfErrors(validator.validaInteresseModificabile(interesseSalvato, errori));
+        validator.validaInteresseModificabile(interesseSalvato);
         // decorrenza attuale, quella salvata (non la nuova scelta dall'utente)
         LocalDate dataInizioInteresse = interesseSalvato.getDataInizioVal();
         // interesse che precede quello salvato (null se non c'è): alla fine la sua fine validità si riapre o si sposta
@@ -136,7 +131,7 @@ public class GestioneInteressiController implements IGestioneInteressiController
             impostaFineValidita(interessePrecedente, Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA, oggi);
         } else {
             // nuova decorrenza (valida, dopo il precedente) e nuovo tasso (valido, diverso dal precedente)
-            Utility.checkAndThrowIfErrors(validator.validaModificaInteresse(modificaInteresseDto, interessePrecedente, errori));
+            validator.validaModificaInteresse(modificaInteresseDto, interessePrecedente);
             LocalDate dataDecorrenza = modificaInteresseDto.getDataDecorrenza();
             aggiornaInteresse(interesseSalvato, modificaInteresseDto, oggi);
             // decorrenza cambiata: il precedente ora finisce il giorno prima della nuova

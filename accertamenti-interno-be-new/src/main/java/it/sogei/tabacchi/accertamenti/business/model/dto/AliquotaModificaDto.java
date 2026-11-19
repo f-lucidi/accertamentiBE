@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 // uno scaglione del gruppo (tipo AliquotaModifica del frontend)
 @Data
-public class AliquotaModificaDto {
+public class AliquotaModificaDto implements ScaglioneGiorniRitardo {
     private Long idAliquota;            // null sulle aliquote nuove
     private BigDecimal valoreAliquota;
     private Integer giorniDa;

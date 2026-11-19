@@ -7,12 +7,14 @@ import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Validazioni della funzionalità "Consultazione imposte".
- * Nessun metodo lancia eccezioni: aggiungono i messaggi alla lista errori creata dal controller e la restituiscono;
- * è il controller a lanciare una sola BusinessException con tutti i messaggi.
+ * Ogni metodo pubblico è una fase: void, raccoglie gli errori in una lista propria e se non è vuota lancia lui
+ * la BusinessException con i messaggi concatenati ({@code commonValidator.checkAndThrowIfErrors});
+ * il controller li chiama in fila.
  *
  * <p><b>Perché è un bean {@code @Dependent}</b> (e non una classe creata con {@code new}):</p>
  * <ul>
@@ -38,35 +40,38 @@ public class ConsultazioneImposteValidator {
     private CommonValidator commonValidator;
 
     // categoria prodotto (dal path) obbligatoria
-    public List<String> validaCategoriaProdotto(String categoriaProdotto, List<String> errori) {
+    public void validaCategoriaProdotto(String categoriaProdotto) {
+        List<String> errori = new ArrayList<>();
         commonValidator.validaObbligatorio(categoriaProdotto, Constants.ErrorMessages.CATEGORIA_PRODOTTO_OBBLIGATORIA, errori);
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // 1° passo, sui valori grezzi ricevuti (categoria dal path + filtri dal body), prima di ogni accesso al DB:
-    // presenza della categoria, almeno un criterio di ricerca.
+    // presenza della categoria, almeno un criterio di ricerca, tutti gli errori insieme
+    // (per questo la categoria si controlla qui e non chiamando validaCategoriaProdotto, che lancerebbe da sola).
     // Che i filtri ci siano lo controlla Bean Validation (@Valid @NotNull su IConsultazioneImpostaService.findAllElencoPosizioni)
-    public List<String> validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
-                                            List<String> errori) {
-        validaCategoriaProdotto(categoriaProdotto, errori);
+    public void validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
+        List<String> errori = new ArrayList<>();
+        commonValidator.validaObbligatorio(categoriaProdotto, Constants.ErrorMessages.CATEGORIA_PRODOTTO_OBBLIGATORIA, errori);
         // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
         // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
         commonValidator.validaAlmenoUnoValorizzato(
                 Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA, errori,
                 parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
                 parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 
     // 2° passo, sui filtri già convertiti (gli errori di formato li ha già lanciati la conversione):
     // anno obbligatorio e intervalli di date coerenti
-    public List<String> validaCriteriRicerca(CriteriRicercaPosizioni criteri, List<String> errori) {
+    public void validaCriteriRicerca(CriteriRicercaPosizioni criteri) {
+        List<String> errori = new ArrayList<>();
         commonValidator.validaObbligatorio(criteri.anno(), Constants.ErrorMessages.ANNO_CONTABILE_OBBLIGATORIO, errori);
         commonValidator.validaIntervalloDate(criteri.dataPagamentoDa(), criteri.dataPagamentoA(),
                 Constants.ErrorMessages.INTERVALLO_DATE_PAGAMENTO_NON_VALIDO, errori);
         // inizio/fine periodo: intervallo sulla scadenza
         commonValidator.validaIntervalloDate(criteri.inizioPeriodo(), criteri.finePeriodo(),
                 Constants.ErrorMessages.INTERVALLO_PERIODO_NON_VALIDO, errori);
-        return errori;
+        commonValidator.checkAndThrowIfErrors(errori);
     }
 }

@@ -80,6 +80,34 @@ public interface CustomMapper {
     @Mapping(target = "idGruppo", ignore = true)
     WTBAccertamentiAliquotaMora toAliquotaMora(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza);
 
+    // riga dell'elenco sanzioni: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto,
+    // moltiplicatore 1/0 del DB -> Boolean. idGruppo, sanzione, giorniRitardoDa e giorniRitardoA hanno lo stesso nome
+    @Mapping(target = "idSanzione", source = "id")
+    @Mapping(target = "moltiplicatoPerGiorni",
+            expression = "java(Constants.GestioneParametri.MOLTIPLICATO_PER_GIORNI_SI.equals(sanzione.getMoltiplicatoPerGiorniRitardo()))")
+    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(sanzione.getDataInizioVal()))")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(sanzione.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(sanzione.getDtInserimento()))")
+    SanzioneDto toSanzioneDto(WTBAccertamentiSanzioni sanzione);
+
+    List<SanzioneDto> toSanzioniDto(List<WTBAccertamentiSanzioni> sanzioni);
+
+    // sanzione da inserire: copia valori, giorni e moltiplicatore, la decorrenza del gruppo diventa l'inizio validità.
+    // id dalla sequence; fine validità e dati di inserimento li imposta il controller
+    @Mapping(target = "sanzione", source = "sanzioneModifica.valoreSanzione")
+    @Mapping(target = "moltiplicatoPerGiorniRitardo",
+            expression = "java(Utility.toMoltiplicatoPerGiorniRitardo(sanzioneModifica.getMoltiplicatoPerGiorni()))")
+    @Mapping(target = "giorniRitardoDa", source = "sanzioneModifica.giorniDa")
+    @Mapping(target = "giorniRitardoA", source = "sanzioneModifica.giorniA")
+    @Mapping(target = "dataInizioVal", source = "dataDecorrenza")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "dataFineVal", ignore = true)
+    @Mapping(target = "cfInserimento", ignore = true)
+    @Mapping(target = "dtInserimento", ignore = true)
+    @Mapping(target = "dtModifica", ignore = true)
+    @Mapping(target = "idGruppo", ignore = true)
+    WTBAccertamentiSanzioni toSanzione(SanzioneModificaDto sanzioneModifica, LocalDate dataDecorrenza);
+
     // riga dell'elenco interessi sul tardato pagamento (idGruppo e tassoInteresse copiati da soli)
     @Mapping(target = "idInteresse", source = "id")
     @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(interesseRitPagam.getDataInizioVal()))")
