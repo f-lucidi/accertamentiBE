@@ -111,7 +111,7 @@ public class CommonValidator {
 
     // il gruppo salvato (righe con la decorrenza ricavata dall'idGruppo) esiste ed è ancora modificabile:
     // decorrenza futura oppure almeno una riga inserita oggi. dateInserimento = una per riga salvata, vuota se il gruppo non c'è
-    public void validaGruppoModificabile(List<LocalDate> dateInserimento, LocalDate dataInizioGruppo,
+    public void  validaGruppoModificabile(List<LocalDate> dateInserimento, LocalDate dataInizioGruppo,
                                          String messaggioNonTrovato, String messaggioNonModificabile, List<String> errori) {
         LocalDate oggi = LocalDate.now();
         if (dateInserimento.isEmpty()) {

@@ -84,7 +84,7 @@ public class GestioneSanzioniValidator {
             }
         }
         if (!isSanzioneSalvataPresente) {
-            errori.add(Constants.ErrorMessages.GRUPPO_SANZIONI_INCOMPLETO);
+            errori.add(Constants.ErrorMessages.SANZIONE_SALVATA_OBBLIGATORIA);
         }
         commonValidator.checkAndThrowIfErrors(errori);
     }

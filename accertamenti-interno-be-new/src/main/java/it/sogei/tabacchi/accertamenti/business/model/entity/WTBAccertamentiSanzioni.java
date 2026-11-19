@@ -1,15 +1,12 @@
 package it.sogei.tabacchi.accertamenti.business.model.entity;
 
-import it.sogei.tabacchi.accertamenti.utility.Utility;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.PostLoad;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -62,14 +59,4 @@ public class WTBAccertamentiSanzioni {
 
     @Column(name = "DT_MODIFICA")
     private LocalDate dtModifica;
-
-    // id del gruppo (decorrenza yyyyMMdd): non è una colonna, lo calcola calcolaIdGruppo a ogni lettura dal DB
-    @Transient
-    private Integer idGruppo;
-
-    // JPA lo chiama dopo ogni select che carica la riga (find, query, getResultList...)
-    @PostLoad
-    private void calcolaIdGruppo() {
-        idGruppo = Utility.toIdGruppo(dataInizioVal);
-    }
 }

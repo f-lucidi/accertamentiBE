@@ -208,6 +208,7 @@ public class Constants {
         /* Gestione parametri - sanzioni */
         public static final String DATI_SANZIONI_OBBLIGATORI = "I dati delle sanzioni sono obbligatori.";
         public static final String SANZIONI_OBBLIGATORIE = "Indicare almeno una sanzione.";
+        public static final String SANZIONE_SALVATA_OBBLIGATORIA = "In modifica indicare almeno una sanzione già salvata.";
         public static final String SANZIONI_DA_MODIFICARE_NON_TROVATE = "Sanzioni da modificare non trovate.";
         public static final String GRUPPO_SANZIONI_NON_MODIFICABILE = "Le sanzioni con decorrenza %s sono già in vigore e non sono più modificabili.";
         public static final String GRUPPO_SANZIONI_INCOMPLETO = "Indicare tutte e sole le sanzioni già salvate del gruppo.";

@@ -23,10 +23,14 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-// stessa logica delle aliquote (GestioneAliquoteController); differenze:
+// stessa logica delle aliquote (GestioneAliquoteController): si salva sempre l'intero set di sanzioni (analisi: "set di sanzioni").
+// Differenze:
+// - in modifica il gruppo non arriva come idGruppo: si ricava dalla decorrenza della prima sanzione già salvata della richiesta
+//   (come nel BE e nel FE del collega)
 // - la cancellazione di uno scaglione è una DELETE (la tabella non ha FLAG_CANCELLA)
-// - c'è moltiplicatoPerGiorni (Boolean nel DTO, 1/0 a DB: lo converte il mapper)
+// - c'è moltiplicatoPerGiorni (Boolean nel DTO, 1/0 a DB: Utility.toMoltiplicatoPerGiorniRitardo)
 @RequestScoped
 @LogMethodInvocation(logParameters = false)
 public class GestioneSanzioniController implements IGestioneSanzioniController {
@@ -116,15 +120,16 @@ public class GestioneSanzioniController implements IGestioneSanzioniController {
         applicaModificaGruppo(modificaSanzioniDto, gruppoSalvato, dataInizioGruppo, dataInizioPrecedente, cfUtente);
     }
 
-    // decorrenza letta dalla prima sanzione già salvata della richiesta (validaElencoModifica garantisce che ci sia)
+    // decorrenza letta dalla prima sanzione già salvata della richiesta (validaElencoModifica garantisce che ci sia);
+    // null se quella sanzione non è a DB
     private LocalDate findDataInizioGruppo(ModificaSanzioniDto modificaSanzioniDto) {
-        for (SanzioneModificaDto sanzioneModifica : modificaSanzioniDto.getScaglioni()) {
-            if (null != sanzioneModifica.getIdSanzione()) {
-                WTBAccertamentiSanzioni sanzioneSalvata = gestioneSanzioniDao.findSanzioneById(sanzioneModifica.getIdSanzione());
-                return null == sanzioneSalvata ? null : sanzioneSalvata.getDataInizioVal();
-            }
-        }
-        return null;
+        Long idPrimaSanzioneSalvata = modificaSanzioniDto.getScaglioni().stream()
+                .map(SanzioneModificaDto::getIdSanzione)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        WTBAccertamentiSanzioni sanzioneSalvata = null == idPrimaSanzioneSalvata ? null : gestioneSanzioniDao.findSanzioneById(idPrimaSanzioneSalvata);
+        return null == sanzioneSalvata ? null : sanzioneSalvata.getDataInizioVal();
     }
 
     // scritture della MODIFICA, a validazione superata: aggiorna, aggiunge o cancella (DELETE) le righe e
