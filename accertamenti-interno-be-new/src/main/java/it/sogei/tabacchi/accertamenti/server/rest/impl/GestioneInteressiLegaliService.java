@@ -24,6 +24,11 @@ public class GestioneInteressiLegaliService extends AbstractService implements I
     }
 
     @Override
+    public Response findInteresseLegaleById(Long idInteresse) {
+        return ok(gestioneInteressiLegaliController.findInteresseLegaleById(idInteresse));
+    }
+
+    @Override
     public Response findPrimoAnnoMancante() {
         return ok(gestioneInteressiLegaliController.findPrimoAnnoMancante());
     }

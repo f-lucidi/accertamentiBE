@@ -10,6 +10,8 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiInteresseLegale;
 import it.sogei.tabacchi.accertamenti.business.validation.GestioneInteressiLegaliValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
+import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
+import it.sogei.tabacchi.accertamenti.server.exceptions.enums.ExceptionType;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import it.sogei.tabacchi.accertamenti.utility.Utility;
@@ -46,6 +48,20 @@ public class GestioneInteressiLegaliController implements IGestioneInteressiLega
         List<WTBAccertamentiInteresseLegale> interessiLegali = gestioneInteressiLegaliDao.findInteressiLegali(filtriGestioneParametriDto, pagina, elementiPerPagina);
         Long totaleElementi = gestioneInteressiLegaliDao.countInteressiLegali(filtriGestioneParametriDto);
         return RisultatoPaginatoDto.of(customMapper.toInteressiLegaliDto(interessiLegali), totaleElementi, pagina, elementiPerPagina);
+    }
+
+    // ------------ DETTAGLIO INTERESSE LEGALE ------------
+
+    // findById restituisce anche le righe cancellate (FLAG_CANCELLA 1 o 2): per il frontend una riga cancellata non esiste.
+    // Errore di stato con ExceptionType (404): resta nel controller
+    @Override
+    public InteresseLegaleDto findInteresseLegaleById(Long idInteresse) {
+        WTBAccertamentiInteresseLegale interesseLegale = gestioneInteressiLegaliDao.findInteresseLegaleById(idInteresse);
+        if (null == interesseLegale || !Constants.GestioneParametri.FLAG_CANCELLA_NO.equals(interesseLegale.getFlagCancella())) {
+            throw new BusinessException(ExceptionType.NOT_FOUND);
+        } else {
+            return customMapper.toInteresseLegaleDto(interesseLegale);
+        }
     }
 
     // ------------ PRIMO ANNO MANCANTE ------------

@@ -9,6 +9,9 @@ public interface IGestioneInteressiController {
 
     RisultatoPaginatoDto<InteresseDto> findInteressi(FiltriGestioneParametriDto filtriGestioneParametriDto, Integer pagina, Integer elementiPerPagina);
 
+    // interesse non cancellato con quell'id; se non esiste (o è cancellato) BusinessException NOT_FOUND (404)
+    InteresseDto findInteresseById(Long idInteresse);
+
     // true se non esiste un interesse ancora modificabile
     boolean isInserimentoInteressiAbilitato();
 

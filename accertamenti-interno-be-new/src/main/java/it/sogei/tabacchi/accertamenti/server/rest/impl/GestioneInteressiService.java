@@ -24,6 +24,11 @@ public class GestioneInteressiService extends AbstractService implements IGestio
     }
 
     @Override
+    public Response findInteresseById(Long idInteresse) {
+        return ok(gestioneInteressiController.findInteresseById(idInteresse));
+    }
+
+    @Override
     public Response isInserimentoInteressiAbilitato() {
         return ok(gestioneInteressiController.isInserimentoInteressiAbilitato());
     }

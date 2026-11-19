@@ -10,6 +10,9 @@ public interface IGestioneInteressiLegaliController {
 
     RisultatoPaginatoDto<InteresseLegaleDto> findInteressiLegali(FiltriGestioneParametriDto filtriGestioneParametriDto, Integer pagina, Integer elementiPerPagina);
 
+    // interesse legale non cancellato con quell'id; se non esiste (o è cancellato) BusinessException NOT_FOUND (404)
+    InteresseLegaleDto findInteresseLegaleById(Long idInteresse);
+
     // valori per precompilare il form di inserimento: primo anno senza tasso e tasso proposto
     PrimoAnnoMancanteDto findPrimoAnnoMancante();
 

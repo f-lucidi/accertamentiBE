@@ -78,6 +78,7 @@ public class Constants {
 
         public static final String ID_POSIZIONE = "idPosizione";
         public static final String ID_VERSAMENTO = "idVersamento";
+        public static final String ID_INTERESSE = "idInteresse";
         public static final String CATEGORIA_PRODOTTO = "categoriaProdotto";
         public static final String PAGINA = "pagina";
         public static final String ANNO = "anno";
@@ -114,10 +115,14 @@ public class Constants {
         public static final String INTERESSI_LISTA = "/interessi/lista";
         public static final String INTERESSI_MODIFICA = "/interessi/modifica";
         public static final String INTERESSI_INSERIMENTO_ABILITATO = "/interessi/inserimento-abilitato";
+        // dettaglio per id: solo cifre, così non si confonde con /interessi/lista e /interessi/inserimento-abilitato
+        public static final String INTERESSI_DETTAGLIO = "/interessi/{" + Parametri.ID_INTERESSE + ": \\d+}";
         /* Interessi legali */
         public static final String INTERESSI_LEGALI_LISTA = "/interessi-legali/lista";
         public static final String INTERESSI_LEGALI_MODIFICA = "/interessi-legali/modifica";
         public static final String INTERESSI_LEGALI_PRIMO_ANNO_MANCANTE = "/interessi-legali/primo-anno-mancante";
+        // dettaglio per id: solo cifre, così non si confonde con gli altri path di /interessi-legali
+        public static final String INTERESSI_LEGALI_DETTAGLIO = "/interessi-legali/{" + Parametri.ID_INTERESSE + ": \\d+}";
         /* Sanzioni */
         public static final String SANZIONI_LISTA = "/sanzioni/lista";
         public static final String SANZIONI_MODIFICA = "/sanzioni/modifica";

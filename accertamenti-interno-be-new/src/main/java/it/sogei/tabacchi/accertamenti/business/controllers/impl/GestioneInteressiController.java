@@ -50,6 +50,20 @@ public class GestioneInteressiController implements IGestioneInteressiController
         return RisultatoPaginatoDto.of(customMapper.toInteressiDto(interessi), totaleElementi, pagina, elementiPerPagina);
     }
 
+    // ------------ DETTAGLIO INTERESSE ------------
+
+    // findById restituisce anche le righe cancellate: per il frontend una riga cancellata non esiste.
+    // Errore di stato con ExceptionType (404), come il 403 dell'inserimento: resta nel controller
+    @Override
+    public InteresseDto findInteresseById(Long idInteresse) {
+        WTBAccertamentiInteresseRitPagam interesse = gestioneInteressiDao.findInteresseById(idInteresse);
+        if (null == interesse || Boolean.TRUE.equals(interesse.getFlagCancella())) {
+            throw new BusinessException(ExceptionType.NOT_FOUND);
+        } else {
+            return customMapper.toInteresseDto(interesse);
+        }
+    }
+
     // ------------ SALVATAGGIO INTERESSI ------------
 
     @Override

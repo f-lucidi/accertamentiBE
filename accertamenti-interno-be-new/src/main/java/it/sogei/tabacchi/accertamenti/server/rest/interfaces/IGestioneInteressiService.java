@@ -1,6 +1,7 @@
 package it.sogei.tabacchi.accertamenti.server.rest.interfaces;
 
 import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.InteresseDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaInteresseDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
@@ -10,6 +11,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
@@ -47,6 +49,22 @@ public interface IGestioneInteressiService {
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri; {} = nessun filtro", required = true)
             FiltriGestioneParametriDto filtriGestioneParametriDto);
+
+    @GET
+    @Path(Constants.Endpoint.INTERESSI_DETTAGLIO)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Dettaglio di un tasso di interesse sul tardato pagamento",
+            description = "Il tasso con l'id indicato; un tasso cancellato non viene restituito.")
+    @APIResponses({
+            @APIResponse(responseCode = "200", description = "Tasso trovato",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = InteresseDto.class))),
+            @APIResponse(responseCode = "401", description = "Utente non autenticato"),
+            @APIResponse(responseCode = "404", description = "Tasso non trovato o cancellato")
+    })
+    Response findInteresseById(
+            @Parameter(description = "Id del tasso, come ricevuto dall'elenco", required = true, example = "1")
+            @PathParam(Constants.Parametri.ID_INTERESSE) Long idInteresse);
 
     @GET
     @Path(Constants.Endpoint.INTERESSI_INSERIMENTO_ABILITATO)
