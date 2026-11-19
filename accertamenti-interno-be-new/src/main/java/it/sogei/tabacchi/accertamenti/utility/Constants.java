@@ -79,6 +79,7 @@ public class Constants {
         public static final String ID_POSIZIONE = "idPosizione";
         public static final String ID_VERSAMENTO = "idVersamento";
         public static final String ID_INTERESSE = "idInteresse";
+        public static final String ID_GRUPPO = "idGruppo";
         public static final String CATEGORIA_PRODOTTO = "categoriaProdotto";
         public static final String PAGINA = "pagina";
         public static final String ANNO = "anno";
@@ -111,6 +112,8 @@ public class Constants {
         public static final String ALIQUOTE_LISTA = "/aliquote/lista";
         public static final String ALIQUOTE_MODIFICA = "/aliquote/modifica";
         public static final String ALIQUOTE_INSERIMENTO_ABILITATO = "/aliquote/inserimento-abilitato";
+        // righe di un gruppo: idGruppo = decorrenza yyyyMMdd (8 cifre), il backend la riconverte in data
+        public static final String ALIQUOTE_GRUPPO = "/aliquote/gruppo/{" + Parametri.ID_GRUPPO + ": \\d{8}}";
         /* Interessi sul tardato pagamento */
         public static final String INTERESSI_LISTA = "/interessi/lista";
         public static final String INTERESSI_MODIFICA = "/interessi/modifica";
@@ -127,6 +130,8 @@ public class Constants {
         public static final String SANZIONI_LISTA = "/sanzioni/lista";
         public static final String SANZIONI_MODIFICA = "/sanzioni/modifica";
         public static final String SANZIONI_INSERIMENTO_ABILITATO = "/sanzioni/inserimento-abilitato";
+        // righe di un gruppo: idGruppo = decorrenza yyyyMMdd (8 cifre), il backend la riconverte in data
+        public static final String SANZIONI_GRUPPO = "/sanzioni/gruppo/{" + Parametri.ID_GRUPPO + ": \\d{8}}";
         /* Anni per il box di ricerca */
         public static final String ANNI = "/anni";
     }

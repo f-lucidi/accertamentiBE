@@ -89,6 +89,7 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
         return queryManager.createBuilder(WTBAccertamentiAliquotaMora.class)
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.flagCancella, false)
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, dataInizio)
+                .orderByAsc(WTBAccertamentiAliquotaMora_.giorniRitardoDa)
                 .getResultList();
     }
 

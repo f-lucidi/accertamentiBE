@@ -22,7 +22,7 @@ public interface IGestioneSanzioniDao {
     // sanzione con quell'id; null se non esiste
     WTBAccertamentiSanzioni findSanzioneById(Long id);
 
-    // righe del gruppo (stessa data di inizio); lista vuota se il gruppo non esiste
+    // righe del gruppo (stessa data di inizio) in ordine di giorni; lista vuota se il gruppo non esiste
     List<WTBAccertamentiSanzioni> findSanzioniByDataInizio(LocalDate dataInizio);
 
     void insertSanzione(WTBAccertamentiSanzioni sanzione);

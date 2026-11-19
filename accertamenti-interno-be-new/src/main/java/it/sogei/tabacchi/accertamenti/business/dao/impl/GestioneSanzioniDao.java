@@ -91,6 +91,7 @@ public class GestioneSanzioniDao implements IGestioneSanzioniDao {
     public List<WTBAccertamentiSanzioni> findSanzioniByDataInizio(LocalDate dataInizio) {
         return queryManager.createBuilder(WTBAccertamentiSanzioni.class)
                 .addEqualCondition(WTBAccertamentiSanzioni_.dataInizioVal, dataInizio)
+                .orderByAsc(WTBAccertamentiSanzioni_.giorniRitardoDa)
                 .getResultList();
     }
 

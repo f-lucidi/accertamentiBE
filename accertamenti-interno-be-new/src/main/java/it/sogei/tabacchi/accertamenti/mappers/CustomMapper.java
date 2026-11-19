@@ -81,7 +81,7 @@ public interface CustomMapper {
     WTBAccertamentiAliquotaMora toAliquotaMora(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza);
 
     // riga dell'elenco sanzioni: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto,
-    // moltiplicatore 1/0 del DB -> Boolean. sanzione, giorniRitardoDa e giorniRitardoA hanno lo stesso nome
+    // moltiplicatore 1/0 del DB -> Boolean. idGruppo, sanzione, giorniRitardoDa e giorniRitardoA hanno lo stesso nome
     @Mapping(target = "idSanzione", source = "id")
     @Mapping(target = "moltiplicatoPerGiorni",
             expression = "java(Constants.GestioneParametri.MOLTIPLICATO_PER_GIORNI_SI.equals(sanzione.getMoltiplicatoPerGiorniRitardo()))")
@@ -105,6 +105,7 @@ public interface CustomMapper {
     @Mapping(target = "cfInserimento", ignore = true)
     @Mapping(target = "dtInserimento", ignore = true)
     @Mapping(target = "dtModifica", ignore = true)
+    @Mapping(target = "idGruppo", ignore = true)
     WTBAccertamentiSanzioni toSanzione(SanzioneModificaDto sanzioneModifica, LocalDate dataDecorrenza);
 
     // riga dell'elenco interessi sul tardato pagamento (idGruppo e tassoInteresse copiati da soli)

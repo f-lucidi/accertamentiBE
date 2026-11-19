@@ -60,6 +60,20 @@ public class GestioneSanzioniController implements IGestioneSanzioniController {
         return RisultatoPaginatoDto.of(customMapper.toSanzioniDto(sanzioni), totaleElementi, pagina, elementiPerPagina);
     }
 
+    // ------------ DETTAGLIO GRUPPO ------------
+
+    // idGruppo -> decorrenza come per le aliquote (20270101 -> 2027-01-01; non è una data valida -> 400).
+    // Gruppo senza righe = errore di stato con ExceptionType (404): resta nel controller
+    @Override
+    public List<SanzioneDto> findSanzioniByIdGruppo(Integer idGruppo) {
+        List<WTBAccertamentiSanzioni> gruppo = gestioneSanzioniDao.findSanzioniByDataInizio(Utility.toDataInizioGruppo(idGruppo));
+        if (gruppo.isEmpty()) {
+            throw new BusinessException(ExceptionType.NOT_FOUND);
+        } else {
+            return customMapper.toSanzioniDto(gruppo);
+        }
+    }
+
     // ------------ SALVATAGGIO SANZIONI ------------
 
     @Override

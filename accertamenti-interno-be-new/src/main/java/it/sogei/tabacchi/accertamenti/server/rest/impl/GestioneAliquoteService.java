@@ -24,6 +24,11 @@ public class GestioneAliquoteService extends AbstractService implements IGestion
     }
 
     @Override
+    public Response findAliquoteByIdGruppo(Integer idGruppo) {
+        return ok(gestioneAliquoteController.findAliquoteByIdGruppo(idGruppo));
+    }
+
+    @Override
     public Response isInserimentoAliquoteAbilitato() {
         return ok(gestioneAliquoteController.isInserimentoAliquoteAbilitato());
     }

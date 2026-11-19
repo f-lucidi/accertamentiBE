@@ -53,6 +53,20 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
         return RisultatoPaginatoDto.of(customMapper.toAliquoteDto(aliquote), totaleElementi, pagina, elementiPerPagina);
     }
 
+    // ------------ DETTAGLIO GRUPPO ------------
+
+    // idGruppo -> decorrenza come in modifica (20270101 -> 2027-01-01; non è una data valida -> 400).
+    // Gruppo senza righe = errore di stato con ExceptionType (404): resta nel controller
+    @Override
+    public List<AliquotaDto> findAliquoteByIdGruppo(Integer idGruppo) {
+        List<WTBAccertamentiAliquotaMora> gruppo = gestioneAliquoteDao.findAliquoteByDataInizio(Utility.toDataInizioGruppo(idGruppo));
+        if (gruppo.isEmpty()) {
+            throw new BusinessException(ExceptionType.NOT_FOUND);
+        } else {
+            return customMapper.toAliquoteDto(gruppo);
+        }
+    }
+
     // ------------ SALVATAGGIO ALIQUOTE ------------
 
     @Override
