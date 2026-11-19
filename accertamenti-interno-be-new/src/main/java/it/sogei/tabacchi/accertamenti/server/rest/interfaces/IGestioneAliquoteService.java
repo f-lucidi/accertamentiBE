@@ -4,6 +4,8 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametri
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaAliquoteDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -74,5 +76,6 @@ public interface IGestioneAliquoteService {
     })
     Response salvaAliquote(
             @RequestBody(description = "Tipo operazione, id del gruppo (solo in MODIFICA, come ricevuto dall'elenco), data di decorrenza e aliquote (\"scaglioni\")", required = true)
+            @Valid @NotNull(message = Constants.ErrorMessages.DATI_ALIQUOTE_OBBLIGATORI)
             ModificaAliquoteDto modificaAliquote);
 }

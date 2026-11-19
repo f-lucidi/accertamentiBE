@@ -29,14 +29,8 @@ public class GestioneInteressiValidator {
         return commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto, errori);
     }
 
-    // 1° passo del salvataggio: body e tipo operazione presenti (serve al controller per scegliere il ramo)
-    public List<String> validaRichiesteInteresse(ModificaInteresseDto modificaInteresseDto, List<String> errori) {
-        // senza body non c'è un tipo operazione da controllare
-        if (commonValidator.validaObbligatorio(modificaInteresseDto, Constants.ErrorMessages.DATI_INTERESSE_OBBLIGATORI, errori)) {
-            commonValidator.validaObbligatorio(modificaInteresseDto.getTipoOperazione(), Constants.ErrorMessages.TIPO_OPERAZIONE_OBBLIGATORIO, errori);
-        }
-        return errori;
-    }
+    // Body e tipo operazione li controlla Bean Validation prima del controller:
+    // annotazioni su ModificaInteresseDto e @Valid @NotNull sul parametro di IGestioneInteressiService.scriviInteresse
 
     // 2° passo, ramo INSERIMENTO: niente id, niente cancellazione, decorrenza, tasso.
     // Che non esista già un interesse modificabile lo controlla prima il controller (errore 403, non sui dati).
@@ -53,7 +47,7 @@ public class GestioneInteressiValidator {
             errori.add(Constants.ErrorMessages.CANCELLAZIONE_INTERESSE_NON_AMMESSA);
         }
         commonValidator.validaDataDecorrenza(modificaInteresseDto.getDataDecorrenza(), errori);
-        validaTasso(modificaInteresseDto.getTassoInteresse(), errori);
+        commonValidator.validaTasso(modificaInteresseDto.getTassoInteresse(), errori);
         return errori;
     }
 
@@ -102,19 +96,9 @@ public class GestioneInteressiValidator {
                     Constants.ErrorMessages.DECORRENZA_INTERESSE_NON_SUCCESSIVA_PRECEDENTE, errori);
         }
         // e sul tasso solo se il tasso c'è ed è positivo
-        if (validaTasso(modificaInteresseDto.getTassoInteresse(), errori)) {
+        if (commonValidator.validaTasso(modificaInteresseDto.getTassoInteresse(), errori)) {
             validaTassoDiversoDaPrecedente(modificaInteresseDto.getTassoInteresse(), interessePrecedente, errori);
         }
         return errori;
-    }
-
-    // tasso obbligatorio e maggiore di zero; true se valido
-    private boolean validaTasso(BigDecimal tassoInteresse, List<String> errori) {
-        boolean isPresente = commonValidator.validaObbligatorio(tassoInteresse, Constants.ErrorMessages.TASSO_INTERESSE_OBBLIGATORIO, errori);
-        boolean isPositivo = !isPresente || tassoInteresse.compareTo(BigDecimal.ZERO) > 0;
-        if (!isPositivo) {
-            errori.add(Constants.ErrorMessages.TASSO_INTERESSE_NON_POSITIVO);
-        }
-        return isPresente && isPositivo;
     }
 }

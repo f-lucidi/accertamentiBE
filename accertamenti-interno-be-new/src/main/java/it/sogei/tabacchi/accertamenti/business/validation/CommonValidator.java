@@ -7,6 +7,7 @@ import it.sogei.tabacchi.accertamenti.utility.Utility;
 import jakarta.enterprise.context.Dependent;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +72,17 @@ public class CommonValidator {
         if (null != dataInizioPrecedente && !dataDecorrenza.isAfter(dataInizioPrecedente)) {
             errori.add(String.format(messaggio, Utility.formattaData(dataInizioPrecedente)));
         }
+    }
+
+    // tasso di un parametro (interessi sul tardato pagamento, interessi legali): obbligatorio e maggiore di zero.
+    // true se valido: solo allora si può confrontare con altri tassi
+    public boolean validaTasso(BigDecimal tasso, List<String> errori) {
+        boolean isPresente = validaObbligatorio(tasso, Constants.ErrorMessages.TASSO_INTERESSE_OBBLIGATORIO, errori);
+        boolean isPositivo = !isPresente || tasso.compareTo(BigDecimal.ZERO) > 0;
+        if (!isPositivo) {
+            errori.add(Constants.ErrorMessages.TASSO_INTERESSE_NON_POSITIVO);
+        }
+        return isPresente && isPositivo;
     }
 
     // nessuno dei valori è valorizzato (null, vuoto o di soli spazi)

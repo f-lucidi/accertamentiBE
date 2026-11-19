@@ -23,7 +23,7 @@ import java.time.LocalDate;
 public class WTBAccertamentiInteresseRitPagam {
 
     // l'ID lo dà la sequence Oracle al momento del persist; allocationSize = 1 -> un numero per ogni insert.
-    // ATTENZIONE: nome della sequence preso dal BE del collega (INTERESSI al plurale), da verificare sul DB
+    // Nota: la sequence ha INTERESSI al plurale, a differenza della tabella (verificato sul DB)
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SEQ_INTERESSE_RIT_PAGAM")
     @SequenceGenerator(name = "SEQ_INTERESSE_RIT_PAGAM", sequenceName = "SEQ_W_TB_ACCERTAMENTI_INTERESSI_RIT_PAGAM", allocationSize = 1)

@@ -44,30 +44,24 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
     @Override
     public String getDescrizioneCategoria(String categoriaProdotto) {
         List<String> errori = new ArrayList<>();
-        if (validator.validaCategoriaProdotto(categoriaProdotto, errori).size() > 0) {
-            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
-        } else {
-            WTBAccertamentiCategorieProd categoria = consultazioneImposteDao.findCategoriaBySigla(categoriaProdotto);
-            return null != categoria ? categoria.getDescrizione() : Constants.CATEGORIA_PRODOTTO_NON_DISPONIBILE;
-        }
+        Utility.checkAndThrowIfErrors(validator.validaCategoriaProdotto(categoriaProdotto, errori));
+        WTBAccertamentiCategorieProd categoria = consultazioneImposteDao.findCategoriaBySigla(categoriaProdotto);
+        return null != categoria ? categoria.getDescrizione() : Constants.CATEGORIA_PRODOTTO_NON_DISPONIBILE;
     }
 
     @Override
     public ListeFiltriRicercaDto getFiltriRicerca(String categoriaProdotto, String annoContabile) {
         List<String> errori = new ArrayList<>();
-        if (validator.validaCategoriaProdotto(categoriaProdotto, errori).size() > 0) {
-            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
-        } else {
-            String sigla = risolviSiglaCategoria(categoriaProdotto);
-            // anno facoltativo: se presente la lista contiene solo i soggetti attivi in quell'anno
-            Integer anno = Utility.parseInteger(annoContabile, "annoContabile");
-            ListeFiltriRicercaDto listeFiltriRicercaDto = new ListeFiltriRicercaDto();
-            listeFiltriRicercaDto.setListaRagioneSocialePIva(customMapper.toRagioneSocialePIvaDto(
-                    consultazioneImposteDao.findAllRagioneSocialeEPivaByCategoriaProdotto(sigla, anno)));
-            listeFiltriRicercaDto.setTipiPagamenti(customMapper.toTipiPagamentoDto(
-                    consultazioneImposteDao.findAllTipiPagamento()));
-            return listeFiltriRicercaDto;
-        }
+        Utility.checkAndThrowIfErrors(validator.validaCategoriaProdotto(categoriaProdotto, errori));
+        String sigla = risolviSiglaCategoria(categoriaProdotto);
+        // anno facoltativo: se presente la lista contiene solo i soggetti attivi in quell'anno
+        Integer anno = Utility.parseInteger(annoContabile, "annoContabile");
+        ListeFiltriRicercaDto listeFiltriRicercaDto = new ListeFiltriRicercaDto();
+        listeFiltriRicercaDto.setListaRagioneSocialePIva(customMapper.toRagioneSocialePIvaDto(
+                consultazioneImposteDao.findAllRagioneSocialeEPivaByCategoriaProdotto(sigla, anno)));
+        listeFiltriRicercaDto.setTipiPagamenti(customMapper.toTipiPagamentoDto(
+                consultazioneImposteDao.findAllTipiPagamento()));
+        return listeFiltriRicercaDto;
     }
 
     @Override
@@ -75,24 +69,18 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
                                                                      Integer paginaRichiesta, Integer elementiPerPaginaRichiesti) {
         List<String> errori = new ArrayList<>();
         // categoria + filtri, senza DB: presenza e almeno un criterio
-        if (validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto, errori).size() > 0) {
-            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
-        } else {
-            String sigla = risolviSiglaCategoria(categoriaProdotto);
-            // stringhe del FE -> valori tipizzati, una volta sola (gli errori di formato vengono lanciati qui)
-            CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, parametriFiltriRicercaDto);
-            if (validator.validaCriteriRicerca(criteri, errori).size() > 0) {
-                throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
-            } else {
-                int pagina = Utility.normalizzaPagina(paginaRichiesta);
-                int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
-                List<WTBAccertamentiElencoPosizioni> posizioni = consultazioneImposteDao.findElencoPosizioni(criteri, pagina, elementiPerPagina);
-                Long totaleElementi = consultazioneImposteDao.countElencoPosizioni(criteri);
-                // ogni posizione -> DTO completo (vedi popolaPosizione)
-                List<PosizioneDto> posizioniDto = posizioni.stream().map(this::popolaPosizione).toList();
-                return RisultatoPaginatoDto.of(posizioniDto, totaleElementi, pagina, elementiPerPagina);
-            }
-        }
+        Utility.checkAndThrowIfErrors(validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto, errori));
+        String sigla = risolviSiglaCategoria(categoriaProdotto);
+        // stringhe del FE -> valori tipizzati, una volta sola (gli errori di formato vengono lanciati qui)
+        CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, parametriFiltriRicercaDto);
+        Utility.checkAndThrowIfErrors(validator.validaCriteriRicerca(criteri, errori));
+        int pagina = Utility.normalizzaPagina(paginaRichiesta);
+        int elementiPerPagina = Utility.normalizzaElementiPerPagina(elementiPerPaginaRichiesti);
+        List<WTBAccertamentiElencoPosizioni> posizioni = consultazioneImposteDao.findElencoPosizioni(criteri, pagina, elementiPerPagina);
+        Long totaleElementi = consultazioneImposteDao.countElencoPosizioni(criteri);
+        // ogni posizione -> DTO completo (vedi popolaPosizione)
+        List<PosizioneDto> posizioniDto = posizioni.stream().map(this::popolaPosizione).toList();
+        return RisultatoPaginatoDto.of(posizioniDto, totaleElementi, pagina, elementiPerPagina);
     }
 
     // converte i filtri ricevuti come stringhe nei tipi usati dalla query: stringhe vuote -> null (filtro non applicato),

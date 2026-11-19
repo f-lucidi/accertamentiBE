@@ -44,19 +44,17 @@ public class ConsultazioneImposteValidator {
     }
 
     // 1° passo, sui valori grezzi ricevuti (categoria dal path + filtri dal body), prima di ogni accesso al DB:
-    // presenza della categoria e dei filtri, almeno un criterio di ricerca
+    // presenza della categoria, almeno un criterio di ricerca.
+    // Che i filtri ci siano lo controlla Bean Validation (@Valid @NotNull su IConsultazioneImpostaService.findAllElencoPosizioni)
     public List<String> validaFiltriRicerca(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
                                             List<String> errori) {
         validaCategoriaProdotto(categoriaProdotto, errori);
-        // senza filtri non c'è nessun criterio da controllare
-        if (commonValidator.validaObbligatorio(parametriFiltriRicercaDto, Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI, errori)) {
-            // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
-            // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
-            commonValidator.validaAlmenoUnoValorizzato(
-                    Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA, errori,
-                    parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
-                    parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
-        }
+        // almeno un criterio tra P.IVA, periodo contabile (anche "Tutte") e data pagamento da/a:
+        // va controllato sulle stringhe, perché dopo la conversione "Tutte" diventa null
+        commonValidator.validaAlmenoUnoValorizzato(
+                Constants.ErrorMessages.ALMENO_UN_CRITERIO_DI_RICERCA, errori,
+                parametriFiltriRicercaDto.getRagioneSociale(), parametriFiltriRicercaDto.getPeriodoContabile(),
+                parametriFiltriRicercaDto.getDataPagamentoDa(), parametriFiltriRicercaDto.getDataPagamentoA());
         return errori;
     }
 

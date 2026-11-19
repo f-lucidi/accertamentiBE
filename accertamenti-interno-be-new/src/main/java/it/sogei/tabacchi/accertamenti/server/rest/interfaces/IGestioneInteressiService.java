@@ -4,6 +4,8 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametri
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaInteresseDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -75,5 +77,6 @@ public interface IGestioneInteressiService {
     Response scriviInteresse(
             @RequestBody(description = "Tipo operazione, id del tasso (solo in MODIFICA, come ricevuto dall'elenco), "
                     + "data di decorrenza, tasso e flag di cancellazione", required = true)
+            @Valid @NotNull(message = Constants.ErrorMessages.DATI_INTERESSE_OBBLIGATORI)
             ModificaInteresseDto modificaInteresseDto);
 }

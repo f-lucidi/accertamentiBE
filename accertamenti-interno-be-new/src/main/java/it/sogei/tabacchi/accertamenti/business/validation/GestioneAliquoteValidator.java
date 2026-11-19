@@ -30,14 +30,8 @@ public class GestioneAliquoteValidator {
         return commonValidator.validaFiltriGestioneParametri(filtriGestioneParametriDto, errori);
     }
 
-    // 1° passo del salvataggio: body e tipo operazione presenti (serve al controller per scegliere il ramo)
-    public List<String> validaRichiestaAliquote(ModificaAliquoteDto modificaAliquote, List<String> errori) {
-        // senza body non c'è un tipo operazione da controllare
-        if (commonValidator.validaObbligatorio(modificaAliquote, Constants.ErrorMessages.DATI_ALIQUOTE_OBBLIGATORI, errori)) {
-            commonValidator.validaObbligatorio(modificaAliquote.getTipoOperazione(), Constants.ErrorMessages.TIPO_OPERAZIONE_OBBLIGATORIO, errori);
-        }
-        return errori;
-    }
+    // Body, tipo operazione e scaglioni (né null né vuoti) li controlla Bean Validation prima del controller:
+    // annotazioni su ModificaAliquoteDto e @Valid @NotNull sul parametro di IGestioneAliquoteService.salvaAliquote
 
     // 2° passo, ramo INSERIMENTO: nessun id gruppo, decorrenza, ogni aliquota, continuità dei giorni.
     // Che non esista già un gruppo modificabile lo controlla prima il controller (errore 403, non sui dati)
@@ -47,34 +41,26 @@ public class GestioneAliquoteValidator {
         }
         commonValidator.validaDataDecorrenza(modificaAliquote.getDataDecorrenza(), errori);
 
+        // scaglioni non vuoti (@NotEmpty): tutte le aliquote vengono controllate; la continuità solo se i giorni di ognuna sono validi
         List<AliquotaModificaDto> aliquote = modificaAliquote.getScaglioni();
-        if (null == aliquote || aliquote.isEmpty()) {
-            errori.add(Constants.ErrorMessages.ALIQUOTE_OBBLIGATORIE);
-        } else {
-            // tutte le aliquote vengono controllate; la continuità solo se i giorni di ognuna sono validi
-            boolean isAliquoteValide = true;
-            for (int indice = 0; indice < aliquote.size(); indice++) {
-                isAliquoteValide = validaAliquotaNuova(aliquote.get(indice), indice + 1, errori) && isAliquoteValide;
-            }
-            if (isAliquoteValide) {
-                validaContinuitaGiorni(aliquote, errori);
-            }
+        boolean isAliquoteValide = true;
+        for (int indice = 0; indice < aliquote.size(); indice++) {
+            isAliquoteValide = validaAliquotaNuova(aliquote.get(indice), indice + 1, errori) && isAliquoteValide;
+        }
+        if (isAliquoteValide) {
+            validaContinuitaGiorni(aliquote, errori);
         }
         return errori;
     }
 
-    // 2° passo, ramo MODIFICA: id del gruppo presente, elenco presente e senza righe vuote.
+    // 2° passo, ramo MODIFICA: id del gruppo presente, righe senza elementi vuoti (che l'elenco ci sia lo garantisce @NotEmpty).
     // Che contenga tutte le righe già salvate lo controlla validaModificaAliquote, col gruppo letto dal DB
     public List<String> validaElencoModifica(ModificaAliquoteDto modificaAliquote, List<String> errori) {
         commonValidator.validaObbligatorio(modificaAliquote.getIdGruppo(), Constants.ErrorMessages.ID_GRUPPO_OBBLIGATORIO, errori);
         List<AliquotaModificaDto> aliquote = modificaAliquote.getScaglioni();
-        if (null == aliquote || aliquote.isEmpty()) {
-            errori.add(Constants.ErrorMessages.ALIQUOTE_OBBLIGATORIE);
-        } else {
-            for (int indice = 0; indice < aliquote.size(); indice++) {
-                commonValidator.validaObbligatorio(aliquote.get(indice),
-                        String.format(Constants.ErrorMessages.ALIQUOTA_VUOTA, indice + 1), errori);
-            }
+        for (int indice = 0; indice < aliquote.size(); indice++) {
+            commonValidator.validaObbligatorio(aliquote.get(indice),
+                    String.format(Constants.ErrorMessages.ALIQUOTA_VUOTA, indice + 1), errori);
         }
         return errori;
     }

@@ -101,6 +101,25 @@ public interface CustomMapper {
     @Mapping(target = "idGruppo", ignore = true)
     WTBAccertamentiInteresseRitPagam toInteresseRitPagam(ModificaInteresseDto modificaInteresseDto);
 
+    // riga dell'elenco interessi legali
+    @Mapping(target = "idInteresse", source = "id")
+    @Mapping(target = "anno", source = "annoValid")
+    @Mapping(target = "tassoInteresseLegale", source = "tassoInteresse")
+    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(interesseLegale.getDtInserimento()))")
+    InteresseLegaleDto toInteresseLegaleDto(WTBAccertamentiInteresseLegale interesseLegale);
+
+    List<InteresseLegaleDto> toInteressiLegaliDto(List<WTBAccertamentiInteresseLegale> interessiLegali);
+
+    // tasso legale da inserire: anno e tasso; i campi di inserimento li imposta il controller
+    @Mapping(target = "annoValid", source = "anno")
+    @Mapping(target = "tassoInteresse", source = "tassoInteresseLegale")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "flagCancella", ignore = true)
+    @Mapping(target = "cfInserimento", ignore = true)
+    @Mapping(target = "dtInserimento", ignore = true)
+    @Mapping(target = "dataModifica", ignore = true)
+    WTBAccertamentiInteresseLegale toInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto);
+
     /* ESEMPIO  */
 
 //    @Mapping(target = "id",                 source = "id")

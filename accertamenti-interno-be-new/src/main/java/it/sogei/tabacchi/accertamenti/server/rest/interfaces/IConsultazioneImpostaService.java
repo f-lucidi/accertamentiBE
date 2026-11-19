@@ -5,6 +5,8 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ParametriFiltriRicercaD
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -94,6 +96,7 @@ public interface IConsultazioneImpostaService {
             @Parameter(description = "Elementi per pagina; se assente o < 1 usa il default (10), massimo 100", example = "10")
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri di ricerca; i campi non valorizzati vengono ignorati", required = true)
+            @Valid @NotNull(message = Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI)
             ParametriFiltriRicercaDto parametriFiltriRicercaDto);
 }
 

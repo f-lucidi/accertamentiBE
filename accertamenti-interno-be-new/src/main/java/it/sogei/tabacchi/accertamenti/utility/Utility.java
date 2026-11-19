@@ -4,6 +4,7 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.PeriodoContabileDto;
 import it.sogei.tabacchi.accertamenti.server.exceptions.BusinessException;
 import jakarta.ws.rs.container.ResourceInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -31,6 +32,14 @@ public class Utility {
 
     public static <T> T getOrDefault(T obj, T defaultValue) {
         return Objects.isNull(obj) ? defaultValue : obj;
+    }
+
+    // chiude una fase di validazione nei controller: se i validator hanno accumulato errori lancia una sola
+    // BusinessException con tutti i messaggi, altrimenti non fa niente e il controller prosegue
+    public static void checkAndThrowIfErrors(List<String> errori) {
+        if (CollectionUtils.isNotEmpty(errori)) {
+            throw new BusinessException(String.join(Constants.ErrorMessages.SEPARATORE_ERRORI, errori));
+        }
     }
 
     // numero di pagina valido (parte da 1): se nullo o < 1 restituisce la prima pagina

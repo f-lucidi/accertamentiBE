@@ -1,5 +1,6 @@
 package it.sogei.tabacchi.accertamenti.utility;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -46,8 +47,13 @@ public class Constants {
         public static final String CF_INSERIMENTO_SISTEMA = "SYSTEM";
         // il primo scaglione di un gruppo deve partire da questo giorno di ritardo
         public static final Integer PRIMO_GIORNO_RITARDO = 1;
-        // W_TB_ACCERTAMENTI_INTERESSE_LEGALE.FLAG_CANCELLA (numerico 0/1/2): 0 = riga valida
+        // W_TB_ACCERTAMENTI_INTERESSE_LEGALE.FLAG_CANCELLA (numerico): 0 = riga valida, qualsiasi altro valore (1 o 2) = cancellata.
+        // Le letture filtrano su = 0, così escludono sia 1 sia 2
         public static final Integer FLAG_CANCELLA_NO = 0;
+        // valore scritto in cancellazione (2 a DB ha lo stesso significato di 1)
+        public static final Integer FLAG_CANCELLA_SI = 1;
+        // tasso proposto per il primo anno mancante quando l'anno corrente non ha un interesse legale
+        public static final BigDecimal TASSO_INTERESSE_LEGALE_DEFAULT = new BigDecimal("0.2");
 
     }
 
@@ -100,6 +106,10 @@ public class Constants {
         public static final String INTERESSI_LISTA = "/interessi/lista";
         public static final String INTERESSI_MODIFICA = "/interessi/modifica";
         public static final String INTERESSI_INSERIMENTO_ABILITATO = "/interessi/inserimento-abilitato";
+        /* Interessi legali */
+        public static final String INTERESSI_LEGALI_LISTA = "/interessi-legali/lista";
+        public static final String INTERESSI_LEGALI_MODIFICA = "/interessi-legali/modifica";
+        public static final String INTERESSI_LEGALI_PRIMO_ANNO_MANCANTE = "/interessi-legali/primo-anno-mancante";
         /* Anni per il box di ricerca */
         public static final String ANNI = "/anni";
     }
@@ -191,5 +201,12 @@ public class Constants {
         public static final String INTERESSE_NON_TROVATO = "Tasso di interesse da modificare non trovato.";
         public static final String INTERESSE_NON_MODIFICABILE = "Il tasso di interesse con decorrenza %s è già in vigore e non è più modificabile.";
         public static final String DECORRENZA_INTERESSE_NON_SUCCESSIVA_PRECEDENTE = "La data di decorrenza deve essere successiva al %s, inizio del tasso di interesse precedente.";
+
+        /* Gestione parametri - interessi legali (id, cancellazione e tasso usano i messaggi degli interessi) */
+        public static final String DATI_INTERESSE_LEGALE_OBBLIGATORI = "I dati del tasso di interesse legale sono obbligatori.";
+        public static final String ANNO_INTERESSE_LEGALE_OBBLIGATORIO = "L'anno del tasso di interesse legale è obbligatorio.";
+        public static final String ANNO_INTERESSE_LEGALE_GIA_PRESENTE = "Esiste già un tasso di interesse legale per l'anno %s.";
+        public static final String INTERESSE_LEGALE_NON_TROVATO = "Tasso di interesse legale da modificare non trovato.";
+        public static final String INTERESSE_LEGALE_NON_MODIFICABILE = "Il tasso di interesse legale dell'anno %s è già in vigore e non è più modificabile.";
     }
 }
