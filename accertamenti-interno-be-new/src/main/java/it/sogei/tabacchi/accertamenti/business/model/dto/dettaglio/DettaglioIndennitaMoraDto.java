@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 public class DettaglioIndennitaMoraDto {
 
-    private List<PercentualeApplicataDto> aliquoteApplicate;
+    private List<AliquotaApplicataDto> aliquoteApplicate;
     private List<RigaRiepilogoImportiDto> pagamentiMora;
 }

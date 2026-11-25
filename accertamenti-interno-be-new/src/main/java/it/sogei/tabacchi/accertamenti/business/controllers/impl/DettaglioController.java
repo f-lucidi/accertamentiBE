@@ -161,14 +161,14 @@ public class DettaglioController implements IDettaglioController {
         // giorni di ritardo già cercati: righe con lo stesso valore danno le stesse aliquote
         // Un Set è una collezione di elementi che non ammette duplicati
         Set<Integer> giorniCercati = new HashSet<>();
-        List<PercentualeApplicataDto> aliquoteApplicate = new ArrayList<>();
+        List<AliquotaApplicataDto> aliquoteApplicate = new ArrayList<>();
         for (DettaglioImpostaDovutaDto riga : righePagina) {
             Integer giorniRitardo = riga.getGiorniRitardoPagamento();
             // l'aggiunta al Set dei giorniRitardo restituisce un Boolean proprio per la natura del set
             // se esisteva già non va a buon fine e torna false
             if (null != giorniRitardo && giorniRitardo >= Constants.Dettaglio.GIORNO_MINIMO_PER_MORA && giorniCercati.add(giorniRitardo)) {
                 for (WTBAccertamentiAliquotaMora aliquotaMora : dettaglioDao.findAliquoteMoraVigenti(giorniRitardo, finePeriodo)) {
-                    aliquoteApplicate.add(customMapper.toPercentualeApplicataDto(aliquotaMora, giorniRitardo));
+                    aliquoteApplicate.add(customMapper.toAliquotaApplicataDto(aliquotaMora, giorniRitardo));
                 }
             }
         }
@@ -227,10 +227,10 @@ public class DettaglioController implements IDettaglioController {
     // sanzioni vigenti a fine periodo per i giorni dalla scadenza a oggi
     private DettaglioSanzioniDto popolaSanzioni(WTBAccertamentiElencoPosizioni posizione) {
         Integer giorniRitardo = Utility.calcolaGiorniRitardo(posizione.getScadenza());
-        List<PercentualeApplicataDto> sanzioniApplicate = new ArrayList<>();
+        List<SanzioneApplicataDto> sanzioniApplicate = new ArrayList<>();
         if (null != giorniRitardo) {
             for (WTBAccertamentiSanzioni sanzione : dettaglioDao.findSanzioniVigenti(giorniRitardo, calcolaDataFinePeriodo(posizione))) {
-                sanzioniApplicate.add(customMapper.toPercentualeApplicataDto(sanzione, giorniRitardo));
+                sanzioniApplicate.add(customMapper.toSanzioneApplicataDto(sanzione, giorniRitardo));
             }
         }
 

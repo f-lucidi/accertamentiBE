@@ -165,16 +165,18 @@ public interface CustomMapper {
     DettaglioPagamentoDto toDettaglioPagamentoDto(WTBAccertamentiElencoPosizioni posizione);
 
     // aliquota di mora vigente; giorniRitardo è quello della posizione (secondo parametro, stesso nome del campo)
-    @Mapping(target = "percentualeApplicata", source = "aliquotaMora.aliquota")
+    @Mapping(target = "idAliquota", source = "aliquotaMora.id")
+    @Mapping(target = "aliquota", source = "aliquotaMora.aliquota")
     @Mapping(target = "dataInizioValidita", source = "aliquotaMora.dataInizioVal")
     @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(aliquotaMora.getDataFineVal()))")
-    PercentualeApplicataDto toPercentualeApplicataDto(WTBAccertamentiAliquotaMora aliquotaMora, Integer giorniRitardo);
+    AliquotaApplicataDto toAliquotaApplicataDto(WTBAccertamentiAliquotaMora aliquotaMora, Integer giorniRitardo);
 
     // sanzione vigente: come l'aliquota di mora
-    @Mapping(target = "percentualeApplicata", source = "sanzione.sanzione")
+    @Mapping(target = "idSanzione", source = "sanzione.id")
+    @Mapping(target = "sanzione", source = "sanzione.sanzione")
     @Mapping(target = "dataInizioValidita", source = "sanzione.dataInizioVal")
     @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(sanzione.getDataFineVal()))")
-    PercentualeApplicataDto toPercentualeApplicataDto(WTBAccertamentiSanzioni sanzione, Integer giorniRitardo);
+    SanzioneApplicataDto toSanzioneApplicataDto(WTBAccertamentiSanzioni sanzione, Integer giorniRitardo);
 
     // tasso sul tardato pagamento vigente alla scadenza
     @Mapping(target = "interessiVigenti", source = "tassoInteresse")

@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 public class DettaglioSanzioniDto {
 
-    private List<PercentualeApplicataDto> sanzioniApplicate;
+    private List<SanzioneApplicataDto> sanzioniApplicate;
     private List<RigaRiepilogoImportiDto> dettaglioPagamentiSanzioni;
 }
