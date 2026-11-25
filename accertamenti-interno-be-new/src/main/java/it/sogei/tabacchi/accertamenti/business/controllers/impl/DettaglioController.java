@@ -135,7 +135,7 @@ public class DettaglioController implements IDettaglioController {
             impostaDovutaDto.setGiorniRitardoPagamento(Utility.calcolaGiorniRitardo(rigaImposta.getScadenza()));
         } else {
             impostaDovutaDto.setTipoImporto(Constants.Dettaglio.TIPO_IMPORTO_VERSATO);
-            impostaDovutaDto.setDataPagamento(Utility.formattaData(rigaImposta.getDataPagamento()));
+            impostaDovutaDto.setDataPagamento(rigaImposta.getDataPagamento());
             impostaDovutaDto.setMetodoPagamento(findDescrizioneTipoPagamento(rigaImposta.getTipoPagamento()));
             // ritardo del pagamento, già calcolato a DB
             impostaDovutaDto.setGiorniRitardoPagamento(rigaImposta.getGiorniRitardo());
@@ -289,7 +289,7 @@ public class DettaglioController implements IDettaglioController {
                 .filter(versamento -> null != versamento.getDataPagamento())
                 .findFirst()
                 .ifPresent(ultimoVersamento -> {
-                    riga.setDataUltimoPagamento(Utility.formattaData(ultimoVersamento.getDataPagamento()));
+                    riga.setDataUltimoPagamento(ultimoVersamento.getDataPagamento());
                     riga.setMetodoDiPagamento(findDescrizioneTipoPagamento(ultimoVersamento.getTipoPagamento()));
                 });
         return riga;

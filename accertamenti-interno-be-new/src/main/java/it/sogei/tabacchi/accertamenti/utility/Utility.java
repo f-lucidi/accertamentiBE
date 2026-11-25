@@ -158,9 +158,15 @@ public class Utility {
         return null == data ? null : data.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
     }
 
-    // fine validità da mostrare: null se il gruppo è ancora aperto (2999-12-31)
-    public static String formattaDataFineValidita(LocalDate dataFineValidita) {
-        return Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : formattaData(dataFineValidita);
+    // fine validità da mandare al frontend: null se il gruppo è ancora aperto (2999-12-31)
+    public static LocalDate fineValiditaVisibile(LocalDate dataFineValidita) {
+        return Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : dataFineValidita;
+    }
+
+    // id del gruppo di parametri (aliquote, sanzioni) = decorrenza come numero yyyyMMdd (2027-01-01 -> 20270101).
+    // Non sta sul DB: la decorrenza è unica tra i gruppi, quindi righe dello stesso gruppo hanno lo stesso id
+    public static Integer toIdGruppo(LocalDate dataInizioGruppo) {
+        return null == dataInizioGruppo ? null : Integer.valueOf(dataInizioGruppo.format(DateTimeFormatter.BASIC_ISO_DATE));
     }
 
     // moltiplicatoPerGiorni delle sanzioni: true -> 1, false o null -> 0 (colonna numerica MOLTIPLICATO_PER_GIORNI_RITARDO)

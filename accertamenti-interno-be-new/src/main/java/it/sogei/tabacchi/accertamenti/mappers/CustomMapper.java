@@ -57,12 +57,13 @@ public interface CustomMapper {
     @Mapping(target = "interessiLegali", ignore = true)
     PosizioneDto toPosizioneDto(WTBAccertamentiElencoPosizioni posizione);
 
-    // riga dell'elenco aliquote: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto.
+    // riga dell'elenco aliquote: date LocalDate (yyyy-MM-dd nel JSON), fine validità null se il gruppo è aperto.
     // aliquota, giorniRitardoDa e giorniRitardoA hanno lo stesso nome: MapStruct li copia da solo
     @Mapping(target = "idAliquota", source = "id")
-    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(aliquotaMora.getDataInizioVal()))")
-    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(aliquotaMora.getDataFineVal()))")
-    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(aliquotaMora.getDtInserimento()))")
+    @Mapping(target = "idGruppo", expression = "java(Utility.toIdGruppo(aliquotaMora.getDataInizioVal()))")
+    @Mapping(target = "dataInizioValidita", source = "dataInizioVal")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(aliquotaMora.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", source = "dtInserimento")
     AliquotaDto toAliquotaDto(WTBAccertamentiAliquotaMora aliquotaMora);
 
     List<AliquotaDto> toAliquoteDto(List<WTBAccertamentiAliquotaMora> aliquoteMora);
@@ -81,14 +82,15 @@ public interface CustomMapper {
     @Mapping(target = "dataModifica", ignore = true)
     WTBAccertamentiAliquotaMora toAliquotaMora(AliquotaModificaDto aliquotaModifica, LocalDate dataDecorrenza);
 
-    // riga dell'elenco sanzioni: date formattate dd/MM/yyyy, fine validità null se il gruppo è aperto,
+    // riga dell'elenco sanzioni: date LocalDate (yyyy-MM-dd nel JSON), fine validità null se il gruppo è aperto,
     // moltiplicatore 1/0 del DB -> Boolean. sanzione, giorniRitardoDa e giorniRitardoA hanno lo stesso nome
     @Mapping(target = "idSanzione", source = "id")
+    @Mapping(target = "idGruppo", expression = "java(Utility.toIdGruppo(sanzione.getDataInizioVal()))")
     @Mapping(target = "moltiplicatoPerGiorni",
             expression = "java(Constants.GestioneParametri.MOLTIPLICATO_PER_GIORNI_SI.equals(sanzione.getMoltiplicatoPerGiorniRitardo()))")
-    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(sanzione.getDataInizioVal()))")
-    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(sanzione.getDataFineVal()))")
-    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(sanzione.getDtInserimento()))")
+    @Mapping(target = "dataInizioValidita", source = "dataInizioVal")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(sanzione.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", source = "dtInserimento")
     SanzioneDto toSanzioneDto(WTBAccertamentiSanzioni sanzione);
 
     List<SanzioneDto> toSanzioniDto(List<WTBAccertamentiSanzioni> sanzioni);
@@ -110,9 +112,9 @@ public interface CustomMapper {
 
     // riga dell'elenco interessi sul tardato pagamento (tassoInteresse copiato da solo)
     @Mapping(target = "idInteresse", source = "id")
-    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(interesseRitPagam.getDataInizioVal()))")
-    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(interesseRitPagam.getDataFineVal()))")
-    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(interesseRitPagam.getDtInserimento()))")
+    @Mapping(target = "dataInizioValidita", source = "dataInizioVal")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(interesseRitPagam.getDataFineVal()))")
+    @Mapping(target = "dataInserimento", source = "dtInserimento")
     InteresseDto toInteresseDto(WTBAccertamentiInteresseRitPagam interesseRitPagam);
 
     List<InteresseDto> toInteressiDto(List<WTBAccertamentiInteresseRitPagam> interessiRitPagam);
@@ -131,7 +133,7 @@ public interface CustomMapper {
     @Mapping(target = "idInteresse", source = "id")
     @Mapping(target = "anno", source = "annoValid")
     @Mapping(target = "tassoInteresseLegale", source = "tassoInteresse")
-    @Mapping(target = "dataInserimento", expression = "java(Utility.formattaData(interesseLegale.getDtInserimento()))")
+    @Mapping(target = "dataInserimento", source = "dtInserimento")
     InteresseLegaleDto toInteresseLegaleDto(WTBAccertamentiInteresseLegale interesseLegale);
 
     List<InteresseLegaleDto> toInteressiLegaliDto(List<WTBAccertamentiInteresseLegale> interessiLegali);
@@ -154,7 +156,7 @@ public interface CustomMapper {
     @Mapping(target = "statoPosizione", source = "statoPagamento.descrizione")
     @Mapping(target = "periodoContabile",
             expression = "java(Utility.formattaPeriodoContabile(posizione.getTipoPeriodo(), posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina()))")
-    @Mapping(target = "dataScadenza", expression = "java(Utility.formattaData(posizione.getScadenza()))")
+    @Mapping(target = "dataScadenza", source = "scadenza")
     @Mapping(target = "ragioneSociale", ignore = true)
     @Mapping(target = "categoriaProdotto", ignore = true)
     @Mapping(target = "statoRendicontazione", expression = "java(Boolean.TRUE.equals(posizione.getFlagCancella()) "
@@ -164,20 +166,20 @@ public interface CustomMapper {
 
     // aliquota di mora vigente; giorniRitardo è quello della posizione (secondo parametro, stesso nome del campo)
     @Mapping(target = "percentualeApplicata", source = "aliquotaMora.aliquota")
-    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(aliquotaMora.getDataInizioVal()))")
-    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(aliquotaMora.getDataFineVal()))")
+    @Mapping(target = "dataInizioValidita", source = "aliquotaMora.dataInizioVal")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(aliquotaMora.getDataFineVal()))")
     PercentualeApplicataDto toPercentualeApplicataDto(WTBAccertamentiAliquotaMora aliquotaMora, Integer giorniRitardo);
 
     // sanzione vigente: come l'aliquota di mora
     @Mapping(target = "percentualeApplicata", source = "sanzione.sanzione")
-    @Mapping(target = "dataInizioValidita", expression = "java(Utility.formattaData(sanzione.getDataInizioVal()))")
-    @Mapping(target = "dataFineValidita", expression = "java(Utility.formattaDataFineValidita(sanzione.getDataFineVal()))")
+    @Mapping(target = "dataInizioValidita", source = "sanzione.dataInizioVal")
+    @Mapping(target = "dataFineValidita", expression = "java(Utility.fineValiditaVisibile(sanzione.getDataFineVal()))")
     PercentualeApplicataDto toPercentualeApplicataDto(WTBAccertamentiSanzioni sanzione, Integer giorniRitardo);
 
     // tasso sul tardato pagamento vigente alla scadenza
     @Mapping(target = "interessiVigenti", source = "tassoInteresse")
-    @Mapping(target = "inizioValiditaInteresse", expression = "java(Utility.formattaData(interesseRitPagam.getDataInizioVal()))")
-    @Mapping(target = "fineValiditaInteresse", expression = "java(Utility.formattaDataFineValidita(interesseRitPagam.getDataFineVal()))")
+    @Mapping(target = "inizioValiditaInteresse", source = "dataInizioVal")
+    @Mapping(target = "fineValiditaInteresse", expression = "java(Utility.fineValiditaVisibile(interesseRitPagam.getDataFineVal()))")
     InteresseVigenteDto toInteresseVigenteDto(WTBAccertamentiInteresseRitPagam interesseRitPagam);
 
     // tasso di interesse legale di un anno

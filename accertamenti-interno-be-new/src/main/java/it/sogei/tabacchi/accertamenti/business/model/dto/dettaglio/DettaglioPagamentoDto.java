@@ -3,6 +3,7 @@ package it.sogei.tabacchi.accertamenti.business.model.dto.dettaglio;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 // blocco in testa al dettaglio: i nomi rispecchiano il tipo DettaglioPagamento del frontend
 @Data
@@ -16,5 +17,5 @@ public class DettaglioPagamentoDto {
     private String periodoContabile;            // es. "02/2027" o "15/12/2026"
     private BigDecimal importoTotaleDaPagare;
     private String statoPosizione;
-    private String dataScadenza;                // dd/MM/yyyy
+    private LocalDate dataScadenza;                // yyyy-MM-dd
 }
