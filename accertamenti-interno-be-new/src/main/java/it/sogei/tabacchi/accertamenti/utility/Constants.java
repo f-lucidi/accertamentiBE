@@ -12,6 +12,8 @@ public class Constants {
     public static final String RAGIONE_SOCIALE_NON_DISPONIBILE = "Ragione sociale non disponibile";
     // W_TB_ACCERTAMENTI_INTERESSI_LEGALI_PER_ANNO.STATO_PAGAMENTO_INTERESSE_LEGALE
     public static final String INTERESSE_LEGALE_PAGATO = "1";
+    // W_TB_ACCERTAMENTI_STATI_PAGAMENTO.ID della posizione pagata: se diverso, si mostrano gli interessi legali
+    public static final Long STATO_PAGAMENTO_PAGATO = 1L;
 
 
     public static class Periodo {
@@ -65,6 +67,39 @@ public class Constants {
 
     }
 
+    // valori e testi del dettaglio posizione (stessi del BE del collega)
+    public static class Dettaglio {
+
+        // W_TB_ACCERTAMENTI_DETTAGLIO_IMPOSTE.STATO_IMPORTO_PARZIALE: "2" = mancante, altrimenti versato
+        public static final String STATO_IMPORTO_MANCANTE = "2";
+        public static final String TIPO_IMPORTO_VERSATO = "Importo versato";
+        public static final String TIPO_IMPORTO_MANCANTE = "Importo mancante";
+        // metodo di pagamento non trovato
+        public static final String VALORE_NON_DISPONIBILE = "N/D";
+        // la mora si applica dal primo giorno di ritardo
+        public static final Integer GIORNO_MINIMO_PER_MORA = 1;
+
+        // colonna TIPO di W_TB_ACCERTAMENTI_VERS_MORE_INTERESSI_SANZIONI_V
+        public static final String TIPO_VERSAMENTO_MORA = "MORA";
+        public static final String TIPO_VERSAMENTO_INTERESSE = "INTERESSI";
+        public static final String TIPO_VERSAMENTO_SANZIONE = "SANZIONI";
+        public static final String TIPO_VERSAMENTO_INTERESSI_LEGALI = "INTERESSI_LEGALI";
+
+        // etichette delle righe dovuto / versato / restante
+        public static final String MORA_DOVUTA = "Indennita di mora dovuta";
+        public static final String MORA_VERSATA = "Indennita di mora versata";
+        public static final String MORA_RESTANTE = "Indennita di mora restante da pagare";
+        public static final String INTERESSE_DIFFERITO_DOVUTO = "Interesse sul tardato pagamento dovuto";
+        public static final String INTERESSE_DIFFERITO_VERSATO = "Interesse sul tardato pagamento versato";
+        public static final String INTERESSE_DIFFERITO_RESTANTE = "Interesse sul tardato pagamento restante da pagare";
+        public static final String INTERESSI_LEGALI_DOVUTI = "Interessi legali dovuti";
+        public static final String INTERESSI_LEGALI_VERSATI = "Interessi legali versati";
+        public static final String INTERESSI_LEGALI_RESTANTI = "Interessi legali restanti da pagare";
+        public static final String SANZIONE_DOVUTA = "Sanzione dovuta";
+        public static final String SANZIONE_VERSATA = "Sanzione versata";
+        public static final String SANZIONE_RESTANTE = "Sanzione restante da pagare";
+    }
+
     public static class Application {
 
         public static final String CONTEXT_ROOT = "/Accertamenti";
@@ -79,7 +114,6 @@ public class Constants {
         public static final String ID_POSIZIONE = "idPosizione";
         public static final String ID_VERSAMENTO = "idVersamento";
         public static final String ID_INTERESSE = "idInteresse";
-        public static final String ID_GRUPPO = "idGruppo";
         public static final String CATEGORIA_PRODOTTO = "categoriaProdotto";
         public static final String PAGINA = "pagina";
         public static final String ANNO = "anno";
@@ -106,14 +140,15 @@ public class Constants {
         public static final String CONSULTAZIONE_IMPOSTE = "/consultazione-imposte";
         /* Lista Posizioni */
         public static final String LISTA_POSIZIONI = "/lista-posizioni";
+        /* Dettaglio posizione */
+        public static final String DETTAGLIO = "/dettaglio";
+        public static final String PARAMETRO_ID_POSIZIONE = "/{" + Parametri.ID_POSIZIONE + "}";
         /* Gestione parametri */
         public static final String GESTIONE_PARAMETRI = "/gestione-parametri";
         /* Aliquote di mora */
         public static final String ALIQUOTE_LISTA = "/aliquote/lista";
         public static final String ALIQUOTE_MODIFICA = "/aliquote/modifica";
         public static final String ALIQUOTE_INSERIMENTO_ABILITATO = "/aliquote/inserimento-abilitato";
-        // righe di un gruppo: idGruppo = decorrenza yyyyMMdd (8 cifre), il backend la riconverte in data
-        public static final String ALIQUOTE_GRUPPO = "/aliquote/gruppo/{" + Parametri.ID_GRUPPO + ": \\d{8}}";
         /* Interessi sul tardato pagamento */
         public static final String INTERESSI_LISTA = "/interessi/lista";
         public static final String INTERESSI_MODIFICA = "/interessi/modifica";
@@ -130,8 +165,6 @@ public class Constants {
         public static final String SANZIONI_LISTA = "/sanzioni/lista";
         public static final String SANZIONI_MODIFICA = "/sanzioni/modifica";
         public static final String SANZIONI_INSERIMENTO_ABILITATO = "/sanzioni/inserimento-abilitato";
-        // righe di un gruppo: idGruppo = decorrenza yyyyMMdd (8 cifre), il backend la riconverte in data
-        public static final String SANZIONI_GRUPPO = "/sanzioni/gruppo/{" + Parametri.ID_GRUPPO + ": \\d{8}}";
         /* Anni per il box di ricerca */
         public static final String ANNI = "/anni";
     }
@@ -148,7 +181,8 @@ public class Constants {
     public static class SessionKeys {
 
         public static final String USER = "user";
-
+        // id delle posizioni dell'ultima pagina di ricerca: il dettaglio si apre solo su quelle
+        public static final String LISTA_POSIZIONI = "LISTA_POSIZIONI";
 
     }
 
@@ -180,6 +214,10 @@ public class Constants {
         public static final String INTERVALLO_PERIODO_NON_VALIDO = "L'inizio periodo non può essere successivo alla fine periodo.";
         public static final String ALMENO_UN_CRITERIO_DI_RICERCA = "Indicare almeno uno tra partita IVA, periodo contabile e data pagamento da/a.";
 
+        /* Dettaglio posizione */
+        public static final String ID_POSIZIONE_OBBLIGATORIO = "L'id della posizione è obbligatorio.";
+        public static final String POSIZIONE_NON_TROVATA = "Posizione non trovata: %s";
+
         /* Formato dei valori ricevuti: %s = nome del campo, %s = valore */
         public static final String VALORE_NON_VALIDO = "Valore non valido per %s: %s";
         public static final String DATA_NON_VALIDA = "Data non valida per %s: %s";
@@ -188,15 +226,14 @@ public class Constants {
         public static final String UFFICIO_UTENTE_NON_TROVATO = "Ufficio utente non trovato";
 
         /* Gestione parametri - aliquote di mora*/
-        public static final String INTERVALLO_DECORRENZA_NON_VALIDO = "La data inizio validità da non può essere successiva alla data inizio validità a.";
+        public static final String INTERVALLO_DECORRENZA_NON_VALIDO = "La data fine validità non può essere precedente alla data inizio validità.";
         public static final String DATI_ALIQUOTE_OBBLIGATORI = "I dati delle aliquote sono obbligatori.";
         public static final String TIPO_OPERAZIONE_OBBLIGATORIO = "Il tipo operazione è obbligatorio.";
         public static final String DATA_DECORRENZA_OBBLIGATORIA = "La data di decorrenza è obbligatoria.";
         public static final String DATA_DECORRENZA_PASSATA = "La data di decorrenza non può essere nel passato.";
-        public static final String ID_GRUPPO_OBBLIGATORIO = "In modifica l'id del gruppo è obbligatorio.";
-        public static final String ID_GRUPPO_NON_AMMESSO = "In inserimento il gruppo non deve avere un id.";
-        public static final String ID_GRUPPO_NON_VALIDO = "L'id del gruppo %s non è valido.";
         public static final String ALIQUOTE_OBBLIGATORIE = "Indicare almeno un'aliquota.";
+        public static final String ALIQUOTA_SALVATA_OBBLIGATORIA = "In modifica indicare almeno un'aliquota già salvata.";
+        public static final String ALIQUOTE_UGUALI_PRECEDENTI = "Le nuove aliquote devono essere diverse da quelle precedenti.";
         public static final String ALIQUOTE_DA_MODIFICARE_NON_TROVATE = "Aliquote da modificare non trovate.";
         public static final String GRUPPO_ALIQUOTE_NON_MODIFICABILE = "Le aliquote con decorrenza %s sono già in vigore e non sono più modificabili.";
         public static final String GRUPPO_ALIQUOTE_INCOMPLETO = "Indicare tutte e sole le aliquote già salvate del gruppo.";
@@ -219,6 +256,7 @@ public class Constants {
         public static final String DATI_SANZIONI_OBBLIGATORI = "I dati delle sanzioni sono obbligatori.";
         public static final String SANZIONI_OBBLIGATORIE = "Indicare almeno una sanzione.";
         public static final String SANZIONE_SALVATA_OBBLIGATORIA = "In modifica indicare almeno una sanzione già salvata.";
+        public static final String SANZIONI_UGUALI_PRECEDENTI = "Le nuove sanzioni devono essere diverse da quelle precedenti.";
         public static final String SANZIONI_DA_MODIFICARE_NON_TROVATE = "Sanzioni da modificare non trovate.";
         public static final String GRUPPO_SANZIONI_NON_MODIFICABILE = "Le sanzioni con decorrenza %s sono già in vigore e non sono più modificabili.";
         public static final String GRUPPO_SANZIONI_INCOMPLETO = "Indicare tutte e sole le sanzioni già salvate del gruppo.";

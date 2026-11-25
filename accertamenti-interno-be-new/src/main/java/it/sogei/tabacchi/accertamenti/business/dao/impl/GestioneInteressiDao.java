@@ -50,9 +50,9 @@ public class GestioneInteressiDao implements IGestioneInteressiDao {
         return builder
                 .addConditionsWhenValueIsNull(false)
                 .addEqualCondition(WTBAccertamentiInteresseRitPagam_.flagCancella, false)
-                // decorrenza compresa tra Da e A
-                .addGreaterThanOrEqualToCondition(WTBAccertamentiInteresseRitPagam_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
+                // validità che tocca almeno un giorno del periodo Da-A (come per l'anno)
                 .addLessThanOrEqualToCondition(WTBAccertamentiInteresseRitPagam_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaA())
+                .addGreaterThanOrEqualToCondition(WTBAccertamentiInteresseRitPagam_.dataFineVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
                 // vigenti alla data: iniziate entro quel giorno e non ancora finite (la fine è l'ultimo giorno valido)
                 .addLessThanOrEqualToCondition(WTBAccertamentiInteresseRitPagam_.dataInizioVal, filtriGestioneParametriDto.getDataRiferimento())
                 .addGreaterThanOrEqualToCondition(WTBAccertamentiInteresseRitPagam_.dataFineVal, filtriGestioneParametriDto.getDataRiferimento())

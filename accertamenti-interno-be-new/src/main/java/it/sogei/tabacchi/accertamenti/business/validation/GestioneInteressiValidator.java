@@ -43,15 +43,7 @@ public class GestioneInteressiValidator {
     // che deve essere già valida per usarla in una query
     public void validaInserimentoInteresse(ModificaInteresseDto modificaInteresseDto) {
         List<String> errori = new ArrayList<>();
-        if (null != modificaInteresseDto.getIdGruppo()) {
-            errori.add(Constants.ErrorMessages.ID_GRUPPO_NON_AMMESSO);
-        }
-        if (null != modificaInteresseDto.getIdInteresse()) {
-            errori.add(Constants.ErrorMessages.ID_INTERESSE_NON_AMMESSO);
-        }
-        if (Boolean.TRUE.equals(modificaInteresseDto.getFlagCancella())) {
-            errori.add(Constants.ErrorMessages.CANCELLAZIONE_INTERESSE_NON_AMMESSA);
-        }
+        commonValidator.validaNuovoInteresse(modificaInteresseDto.getIdInteresse(), modificaInteresseDto.getFlagCancella(), errori);
         commonValidator.validaDataDecorrenza(modificaInteresseDto.getDataDecorrenza(), errori);
         commonValidator.validaTasso(modificaInteresseDto.getTassoInteresse(), errori);
         commonValidator.checkAndThrowIfErrors(errori);
@@ -66,7 +58,7 @@ public class GestioneInteressiValidator {
     }
 
     // 2° passo, ramo MODIFICA, prima di leggere il DB: l'id dell'interesse da modificare.
-    // L'idGruppo non serve: a differenza delle aliquote ogni decorrenza ha una sola riga, l'id basta a trovarla
+    // Ogni decorrenza ha una sola riga: l'id basta a trovarla
     public void validaRichiestaModifica(ModificaInteresseDto modificaInteresseDto) {
         List<String> errori = new ArrayList<>();
         commonValidator.validaObbligatorio(modificaInteresseDto.getIdInteresse(), Constants.ErrorMessages.ID_INTERESSE_OBBLIGATORIO, errori);

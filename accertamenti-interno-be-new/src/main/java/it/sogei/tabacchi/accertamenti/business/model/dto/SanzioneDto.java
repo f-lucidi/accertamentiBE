@@ -8,9 +8,6 @@ import java.math.BigDecimal;
 // Date già formattate dd/MM/yyyy: il frontend le mostra così come arrivano
 @Data
 public class SanzioneDto {
-    // id del gruppo (decorrenza yyyyMMdd, es. 20270101), uguale su tutte le righe del gruppo:
-    // serve al frontend per GET /sanzioni/gruppo/{idGruppo}. In modifica invece rimanda gli idSanzione
-    private Integer idGruppo;
     private Long idSanzione;
     private BigDecimal sanzione;
     private Boolean moltiplicatoPerGiorni;

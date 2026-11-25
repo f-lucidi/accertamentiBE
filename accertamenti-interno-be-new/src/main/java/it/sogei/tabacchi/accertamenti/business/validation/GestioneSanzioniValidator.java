@@ -69,6 +69,23 @@ public class GestioneSanzioniValidator {
         commonValidator.checkAndThrowIfErrors(errori);
     }
 
+    // 3° passo, ramo INSERIMENTO: le nuove sanzioni (già validate) non possono ripetere il gruppo precedente,
+    // letto dal controller (lista vuota = nessun gruppo precedente). Conta anche "moltiplicato per giorni"
+    public void validaSanzioniDiverseDaPrecedenti(List<SanzioneModificaDto> sanzioni, List<WTBAccertamentiSanzioni> gruppoPrecedente) {
+        List<String> errori = new ArrayList<>();
+        List<String> firmeNuove = sanzioni.stream()
+                .map(sanzione -> commonValidator.firmaScaglione(sanzione.getValoreSanzione(), sanzione.getGiorniDa(), sanzione.getGiorniA())
+                        + "|" + Boolean.TRUE.equals(sanzione.getMoltiplicatoPerGiorni()))
+                .toList();
+        List<String> firmePrecedenti = gruppoPrecedente.stream()
+                .map(sanzione -> commonValidator.firmaScaglione(sanzione.getSanzione(), sanzione.getGiorniRitardoDa(), sanzione.getGiorniRitardoA())
+                        + "|" + Constants.GestioneParametri.MOLTIPLICATO_PER_GIORNI_SI.equals(sanzione.getMoltiplicatoPerGiorniRitardo()))
+                .toList();
+        commonValidator.validaGruppoDiversoDaPrecedente(firmeNuove, firmePrecedenti,
+                Constants.ErrorMessages.SANZIONI_UGUALI_PRECEDENTI, errori);
+        commonValidator.checkAndThrowIfErrors(errori);
+    }
+
     // 2° passo, ramo MODIFICA: almeno una sanzione già salvata (da lì si ricava il gruppo), righe senza elementi vuoti.
     // Che contenga tutte le righe già salvate lo controlla validaModificaSanzioni, col gruppo letto dal DB
     public void validaElencoModifica(ModificaSanzioniDto modificaSanzioniDto) {

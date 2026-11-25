@@ -27,8 +27,6 @@ import java.util.Objects;
 
 // stessa logica delle aliquote (GestioneAliquoteController): si salva sempre l'intero set di sanzioni (analisi: "set di sanzioni").
 // Differenze:
-// - in modifica il gruppo non arriva come idGruppo: si ricava dalla decorrenza della prima sanzione già salvata della richiesta
-//   (come nel BE e nel FE del collega)
 // - la cancellazione di uno scaglione è una DELETE (la tabella non ha FLAG_CANCELLA)
 // - c'è moltiplicatoPerGiorni (Boolean nel DTO, 1/0 a DB: Utility.toMoltiplicatoPerGiorniRitardo)
 @RequestScoped
@@ -60,20 +58,6 @@ public class GestioneSanzioniController implements IGestioneSanzioniController {
         return RisultatoPaginatoDto.of(customMapper.toSanzioniDto(sanzioni), totaleElementi, pagina, elementiPerPagina);
     }
 
-    // ------------ DETTAGLIO GRUPPO ------------
-
-    // idGruppo -> decorrenza come per le aliquote (20270101 -> 2027-01-01; non è una data valida -> 400).
-    // Gruppo senza righe = errore di stato con ExceptionType (404): resta nel controller
-    @Override
-    public List<SanzioneDto> findSanzioniByIdGruppo(Integer idGruppo) {
-        List<WTBAccertamentiSanzioni> gruppo = gestioneSanzioniDao.findSanzioniByDataInizio(Utility.toDataInizioGruppo(idGruppo));
-        if (gruppo.isEmpty()) {
-            throw new BusinessException(ExceptionType.NOT_FOUND);
-        } else {
-            return customMapper.toSanzioniDto(gruppo);
-        }
-    }
-
     // ------------ SALVATAGGIO SANZIONI ------------
 
     @Override
@@ -101,6 +85,12 @@ public class GestioneSanzioniController implements IGestioneSanzioniController {
             throw new BusinessException(ExceptionType.SANZIONE_FUTURA_ALREADY_CREATED);
         } else {
             validator.validaInserimentoSanzioni(modificaSanzioniDto);
+            // il gruppo che la nuova decorrenza chiude; nessuna riga se non c'è
+            LocalDate dataInizioPrecedente = gestioneSanzioniDao.findDataInizioGruppoPrecedente(modificaSanzioniDto.getDataDecorrenza());
+            List<WTBAccertamentiSanzioni> gruppoPrecedente = null == dataInizioPrecedente
+                    ? List.of()
+                    : gestioneSanzioniDao.findSanzioniByDataInizio(dataInizioPrecedente);
+            validator.validaSanzioniDiverseDaPrecedenti(modificaSanzioniDto.getScaglioni(), gruppoPrecedente);
             LocalDate oggi = LocalDate.now();
             LocalDate dataDecorrenza = modificaSanzioniDto.getDataDecorrenza();
             for (SanzioneModificaDto sanzioneModifica : modificaSanzioniDto.getScaglioni()) {

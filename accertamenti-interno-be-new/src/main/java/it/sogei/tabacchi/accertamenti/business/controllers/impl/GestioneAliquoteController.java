@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RequestScoped
 @LogMethodInvocation(logParameters = false)
@@ -53,20 +54,6 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
         return RisultatoPaginatoDto.of(customMapper.toAliquoteDto(aliquote), totaleElementi, pagina, elementiPerPagina);
     }
 
-    // ------------ DETTAGLIO GRUPPO ------------
-
-    // idGruppo -> decorrenza come in modifica (20270101 -> 2027-01-01; non è una data valida -> 400).
-    // Gruppo senza righe = errore di stato con ExceptionType (404): resta nel controller
-    @Override
-    public List<AliquotaDto> findAliquoteByIdGruppo(Integer idGruppo) {
-        List<WTBAccertamentiAliquotaMora> gruppo = gestioneAliquoteDao.findAliquoteByDataInizio(Utility.toDataInizioGruppo(idGruppo));
-        if (gruppo.isEmpty()) {
-            throw new BusinessException(ExceptionType.NOT_FOUND);
-        } else {
-            return customMapper.toAliquoteDto(gruppo);
-        }
-    }
-
     // ------------ SALVATAGGIO ALIQUOTE ------------
 
     @Override
@@ -94,6 +81,12 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
             throw new BusinessException(ExceptionType.ALIQUOTA_FUTURA_ALREADY_CREATED);
         } else {
             validator.validaInserimentoAliquote(modificaAliquote);
+            // il gruppo che la nuova decorrenza chiude (righe non cancellate); nessuna riga se non c'è
+            LocalDate dataInizioPrecedente = gestioneAliquoteDao.findDataInizioGruppoPrecedente(modificaAliquote.getDataDecorrenza());
+            List<WTBAccertamentiAliquotaMora> gruppoPrecedente = null == dataInizioPrecedente
+                    ? List.of()
+                    : gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioPrecedente);
+            validator.validaAliquoteDiverseDaPrecedenti(modificaAliquote.getScaglioni(), gruppoPrecedente);
             LocalDate oggi = LocalDate.now();
             LocalDate dataDecorrenza = modificaAliquote.getDataDecorrenza();
             for (AliquotaModificaDto aliquotaModifica : modificaAliquote.getScaglioni()) {
@@ -106,14 +99,16 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
     // ------------ MODIFICA ------------
 
     // MODIFICA di un gruppo ancora modificabile: aggiorna, aggiunge o cancella righe.
-    // Il gruppo si riconosce dall'idGruppo che il frontend rimanda (la decorrenza attuale del gruppo)
+    // Il gruppo si riconosce dalle aliquote già salvate che il frontend rimanda
     private void modificaGruppoAliquote(ModificaAliquoteDto modificaAliquote, String cfUtente) {
-        // id del gruppo presente, righe presenti e non vuote
+        // almeno un'aliquota già salvata, righe presenti e non vuote
         validator.validaElencoModifica(modificaAliquote);
-        // decorrenza attuale del gruppo, ricavata dal suo id (20270101 -> 2027-01-01): è quella salvata, non la nuova scelta dall'utente
-        LocalDate dataInizioGruppo = Utility.toDataInizioGruppo(modificaAliquote.getIdGruppo());
-        // tutte le righe non cancellate del gruppo, così come sono a DB
-        List<WTBAccertamentiAliquotaMora> gruppoSalvato = gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioGruppo);
+        // decorrenza attuale del gruppo (quella salvata); null se l'aliquota non è a DB o è cancellata
+        LocalDate dataInizioGruppo = findDataInizioGruppo(modificaAliquote);
+        // righe non cancellate del gruppo, così come sono a DB; nessuna se l'aliquota indicata non esiste
+        List<WTBAccertamentiAliquotaMora> gruppoSalvato = null == dataInizioGruppo
+                ? List.of()
+                : gestioneAliquoteDao.findAliquoteByDataInizio(dataInizioGruppo);
         // il gruppo esiste ed è ancora modificabile (decorrenza futura o inserito oggi)
         validator.validaGruppoModificabile(gruppoSalvato, dataInizioGruppo);
         // inizio del gruppo precedente (null se non c'è): alla fine la sua data di fine si sposta
@@ -122,6 +117,21 @@ public class GestioneAliquoteController implements IGestioneAliquoteController {
         // decorrenza, righe del gruppo complete, valori e giorni consecutivi delle righe che restano
         validator.validaModificaAliquote(modificaAliquote, gruppoSalvato, dataInizioPrecedente);
         applicaModificaGruppo(modificaAliquote, gruppoSalvato, dataInizioGruppo, dataInizioPrecedente, cfUtente);
+    }
+
+    // decorrenza letta dalla prima aliquota già salvata della richiesta (validaElencoModifica garantisce che ci sia);
+    // null se quell'aliquota non è a DB o è cancellata (per il frontend non esiste)
+    private LocalDate findDataInizioGruppo(ModificaAliquoteDto modificaAliquote) {
+        Long idPrimaAliquotaSalvata = modificaAliquote.getScaglioni().stream()
+                .map(AliquotaModificaDto::getIdAliquota)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+        WTBAccertamentiAliquotaMora aliquotaSalvata = null == idPrimaAliquotaSalvata
+                ? null
+                : gestioneAliquoteDao.findAliquotaById(idPrimaAliquotaSalvata);
+        boolean isAliquotaValida = null != aliquotaSalvata && !Boolean.TRUE.equals(aliquotaSalvata.getFlagCancella());
+        return isAliquotaValida ? aliquotaSalvata.getDataInizioVal() : null;
     }
 
     // scritture della MODIFICA, a validazione superata: aggiorna, aggiunge o cancella le righe e

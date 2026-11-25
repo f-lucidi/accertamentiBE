@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -122,18 +123,34 @@ public class Utility {
         }
     }
 
-    // "MM/yyyy" per le mensilità; per le quindicine (TIPO_PERIODO = "Q") la data di fine quindicina "dd/MM/yyyy":
-    // il 15 per la prima quindicina, l'ultimo giorno del mese per la seconda. Il periodo si ricava da
-    // anno + mese + quindicina e non da SCADENZA, che per le quindicine vale sempre l'ultimo giorno del mese.
-    public static String formattaPeriodoContabile(String tipoPeriodo, Integer anno, Integer mese, Integer numQuindicina) {
+    // ultimo giorno del periodo contabile: il 15 per la prima quindicina, altrimenti l'ultimo giorno del mese.
+    // null se mancano anno o mese
+    public static LocalDate calcolaDataFinePeriodo(String tipoPeriodo, Integer anno, Integer mese, Integer numQuindicina) {
+        if (null == anno || null == mese) {
+            return null;
+        }
         // YearMonth tiene solo anno e mese: il giorno si sceglie dopo con atDay(15) o atEndOfMonth()
-        YearMonth meseAnno = (null != anno && null != mese) ? YearMonth.of(anno, mese) : null;
+        YearMonth meseAnno = YearMonth.of(anno, mese);
+        boolean isPrimaQuindicina = Constants.Periodo.TIPO_PERIODO_QUINDICINA.equals(tipoPeriodo)
+                && Objects.equals(Constants.Periodo.PRIMA_QUINDICINA, numQuindicina);
+        return isPrimaQuindicina ? meseAnno.atDay(Constants.Periodo.ULTIMO_GIORNO_PRIMA_QUINDICINA) : meseAnno.atEndOfMonth();
+    }
+
+    // "MM/yyyy" per le mensilità; per le quindicine la data di fine quindicina "dd/MM/yyyy" (vedi calcolaDataFinePeriodo).
+    // Il periodo si ricava da anno + mese + quindicina e non da SCADENZA, che per le quindicine è sempre a fine mese
+    public static String formattaPeriodoContabile(String tipoPeriodo, Integer anno, Integer mese, Integer numQuindicina) {
+        if (null == anno || null == mese) {
+            return null;
+        }
         boolean isQuindicina = Constants.Periodo.TIPO_PERIODO_QUINDICINA.equals(tipoPeriodo);
-        boolean isPrimaQuindicina = Objects.equals(Constants.Periodo.PRIMA_QUINDICINA, numQuindicina);
-        return null == meseAnno ? null
-                : !isQuindicina ? meseAnno.format(DateTimeFormatter.ofPattern("MM/yyyy"))
-                : (isPrimaQuindicina ? meseAnno.atDay(Constants.Periodo.ULTIMO_GIORNO_PRIMA_QUINDICINA) : meseAnno.atEndOfMonth())
-                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        return isQuindicina
+                ? calcolaDataFinePeriodo(tipoPeriodo, anno, mese, numQuindicina).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : YearMonth.of(anno, mese).format(DateTimeFormatter.ofPattern("MM/yyyy"));
+    }
+
+    // giorni dalla scadenza a oggi (0 se non ancora scaduta), null se la scadenza manca
+    public static Integer calcolaGiorniRitardo(LocalDate scadenza) {
+        return null == scadenza ? null : Math.toIntExact(Math.max(0, ChronoUnit.DAYS.between(scadenza, LocalDate.now())));
     }
 
     // data in formato dd/MM/yyyy, null se la data manca
@@ -144,21 +161,6 @@ public class Utility {
     // fine validità da mostrare: null se il gruppo è ancora aperto (2999-12-31)
     public static String formattaDataFineValidita(LocalDate dataFineValidita) {
         return Constants.GestioneParametri.DATA_FINE_VALIDITA_APERTA.equals(dataFineValidita) ? null : formattaData(dataFineValidita);
-    }
-
-    // id del gruppo di parametri (aliquote, interessi...) = decorrenza come numero yyyyMMdd (2027-01-01 -> 20270101).
-    // Non sta sul DB: si ricava dalla decorrenza, unica tra i gruppi non cancellati, e si torna indietro con toDataInizioGruppo
-    public static Integer toIdGruppo(LocalDate dataInizioGruppo) {
-        return null == dataInizioGruppo ? null : Integer.valueOf(dataInizioGruppo.format(DateTimeFormatter.BASIC_ISO_DATE));
-    }
-
-    // inverso di toIdGruppo: 20270101 -> 2027-01-01; un numero che non è una data valida -> 400
-    public static LocalDate toDataInizioGruppo(Integer idGruppo) {
-        try {
-            return LocalDate.parse(String.valueOf(idGruppo), DateTimeFormatter.BASIC_ISO_DATE);
-        } catch (DateTimeParseException e) {
-            throw new BusinessException(String.format(Constants.ErrorMessages.ID_GRUPPO_NON_VALIDO, idGruppo));
-        }
     }
 
     // moltiplicatoPerGiorni delle sanzioni: true -> 1, false o null -> 0 (colonna numerica MOLTIPLICATO_PER_GIORNI_RITARDO)

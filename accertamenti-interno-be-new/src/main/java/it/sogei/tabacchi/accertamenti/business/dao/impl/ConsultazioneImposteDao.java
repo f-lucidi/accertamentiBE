@@ -52,6 +52,12 @@ public class ConsultazioneImposteDao implements IConsultazioneImposteDao {
         return queryManager.findById(WTBAccertamentiCategorieProd.class, siglaCategoria);
     }
 
+    @Override
+    public String findDescrizioneCategoria(String siglaCategoria) {
+        WTBAccertamentiCategorieProd categoria = findCategoriaBySigla(siglaCategoria);
+        return null != categoria ? categoria.getDescrizione() : null;
+    }
+
     // Menu "ragione sociale - P.IVA" dei filtri: è il punto di partenza del flusso. Il FE mostra la coppia
     // DENOMINAZIONE / CF_PIVA e poi rimanda alla ricerca solo CF_PIVA, che si confronta con CF_SOG_OBBLIGATO
     // delle posizioni.

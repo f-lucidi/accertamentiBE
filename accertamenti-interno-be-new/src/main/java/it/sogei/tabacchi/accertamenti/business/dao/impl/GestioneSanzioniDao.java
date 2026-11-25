@@ -49,9 +49,9 @@ public class GestioneSanzioniDao implements IGestioneSanzioniDao {
 
         return builder
                 .addConditionsWhenValueIsNull(false)
-                // decorrenza compresa tra Da e A
-                .addGreaterThanOrEqualToCondition(WTBAccertamentiSanzioni_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
+                // validità che tocca almeno un giorno del periodo Da-A (come per l'anno)
                 .addLessThanOrEqualToCondition(WTBAccertamentiSanzioni_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaA())
+                .addGreaterThanOrEqualToCondition(WTBAccertamentiSanzioni_.dataFineVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
                 // vigenti alla data: iniziate entro quel giorno e non ancora finite (la fine è l'ultimo giorno valido)
                 .addLessThanOrEqualToCondition(WTBAccertamentiSanzioni_.dataInizioVal, filtriGestioneParametriDto.getDataRiferimento())
                 .addGreaterThanOrEqualToCondition(WTBAccertamentiSanzioni_.dataFineVal, filtriGestioneParametriDto.getDataRiferimento())

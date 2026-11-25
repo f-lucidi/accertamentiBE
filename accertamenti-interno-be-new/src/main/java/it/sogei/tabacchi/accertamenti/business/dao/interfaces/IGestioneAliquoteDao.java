@@ -19,7 +19,10 @@ public interface IGestioneAliquoteDao {
     // decorrenza del gruppo che precede quella indicata, null se non esiste
     LocalDate findDataInizioGruppoPrecedente(LocalDate dataDecorrenza);
 
-    // righe non cancellate del gruppo (dataInizio = idGruppo) in ordine di giorni; lista vuota se il gruppo non esiste
+    // riga per id, anche se cancellata; null se non esiste
+    WTBAccertamentiAliquotaMora findAliquotaById(Long id);
+
+    // righe non cancellate del gruppo (stessa data di inizio) in ordine di giorni; lista vuota se il gruppo non esiste
     List<WTBAccertamentiAliquotaMora> findAliquoteByDataInizio(LocalDate dataInizio);
 
     void insertAliquota(WTBAccertamentiAliquotaMora aliquota);

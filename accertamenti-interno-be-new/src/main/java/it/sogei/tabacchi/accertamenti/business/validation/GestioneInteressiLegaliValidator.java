@@ -32,12 +32,7 @@ public class GestioneInteressiLegaliValidator {
     // con i messaggi concatenati, altrimenti non fa niente e il controller prosegue
     public void validaInserimentoInteresseLegale(ModificaInteresseLegaleDto modificaInteresseLegaleDto) {
         List<String> errori = new ArrayList<>();
-        if (null != modificaInteresseLegaleDto.getIdInteresse()) {
-            errori.add(Constants.ErrorMessages.ID_INTERESSE_NON_AMMESSO);
-        }
-        if (Boolean.TRUE.equals(modificaInteresseLegaleDto.getFlagCancella())) {
-            errori.add(Constants.ErrorMessages.CANCELLAZIONE_INTERESSE_NON_AMMESSA);
-        }
+        commonValidator.validaNuovoInteresse(modificaInteresseLegaleDto.getIdInteresse(), modificaInteresseLegaleDto.getFlagCancella(), errori);
         commonValidator.validaObbligatorio(modificaInteresseLegaleDto.getAnno(), Constants.ErrorMessages.ANNO_INTERESSE_LEGALE_OBBLIGATORIO, errori);
         commonValidator.validaTasso(modificaInteresseLegaleDto.getTassoInteresseLegale(), errori);
         commonValidator.checkAndThrowIfErrors(errori);

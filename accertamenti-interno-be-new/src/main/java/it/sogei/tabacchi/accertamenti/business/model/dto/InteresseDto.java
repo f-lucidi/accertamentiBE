@@ -8,8 +8,6 @@ import java.math.BigDecimal;
 // Date già formattate dd/MM/yyyy: il frontend le mostra così come arrivano
 @Data
 public class InteresseDto {
-    // id del gruppo (decorrenza yyyyMMdd, es. 20270101): il frontend lo rimanda in ModificaInteresseDto per operare sul tasso
-    private Integer idGruppo;
     private Long idInteresse;
     private BigDecimal tassoInteresse;
     private String dataInizioValidita;

@@ -3,7 +3,6 @@ package it.sogei.tabacchi.accertamenti.server.rest.interfaces;
 import it.sogei.tabacchi.accertamenti.business.model.dto.FiltriGestioneParametriDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ModificaSanzioniDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
-import it.sogei.tabacchi.accertamenti.business.model.dto.SanzioneDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -11,13 +10,11 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -50,23 +47,6 @@ public interface IGestioneSanzioniService {
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri; {} = nessun filtro", required = true)
             FiltriGestioneParametriDto filtriGestioneParametriDto);
-
-    @GET
-    @Path(Constants.Endpoint.SANZIONI_GRUPPO)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Sanzioni di un gruppo",
-            description = "Le sanzioni del gruppo indicato, in ordine di giorni di ritardo.")
-    @APIResponses({
-            @APIResponse(responseCode = "200", description = "Sanzioni del gruppo",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = SanzioneDto.class, type = SchemaType.ARRAY))),
-            @APIResponse(responseCode = "400", description = "idGruppo non è una data valida"),
-            @APIResponse(responseCode = "401", description = "Utente non autenticato"),
-            @APIResponse(responseCode = "404", description = "Gruppo non trovato")
-    })
-    Response findSanzioniByIdGruppo(
-            @Parameter(description = "Id del gruppo come ricevuto dall'elenco: decorrenza yyyyMMdd", required = true, example = "20270101")
-            @PathParam(Constants.Parametri.ID_GRUPPO) Integer idGruppo);
 
     @GET
     @Path(Constants.Endpoint.SANZIONI_INSERIMENTO_ABILITATO)

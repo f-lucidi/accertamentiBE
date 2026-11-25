@@ -24,11 +24,6 @@ public class GestioneSanzioniService extends AbstractService implements IGestion
     }
 
     @Override
-    public Response findSanzioniByIdGruppo(Integer idGruppo) {
-        return ok(gestioneSanzioniController.findSanzioniByIdGruppo(idGruppo));
-    }
-
-    @Override
     public Response isInserimentoSanzioniAbilitato() {
         return ok(gestioneSanzioniController.isInserimentoSanzioniAbilitato());
     }

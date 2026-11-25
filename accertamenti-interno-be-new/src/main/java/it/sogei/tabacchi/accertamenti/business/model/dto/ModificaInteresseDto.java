@@ -15,7 +15,6 @@ import java.time.LocalDate;
 public class ModificaInteresseDto {
     @NotNull(message = Constants.ErrorMessages.TIPO_OPERAZIONE_OBBLIGATORIO)
     private TipoOperazione tipoOperazione;
-    private Integer idGruppo;                   // come arriva in InteresseDto (es. 20270101); null in INSERIMENTO, obbligatorio in MODIFICA
     private LocalDate dataDecorrenza;           // yyyy-MM-dd
     private Long idInteresse;                   // null in INSERIMENTO, obbligatorio in MODIFICA
     private BigDecimal tassoInteresse;

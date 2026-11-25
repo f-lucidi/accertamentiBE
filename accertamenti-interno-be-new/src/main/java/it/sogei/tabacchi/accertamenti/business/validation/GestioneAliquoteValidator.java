@@ -40,13 +40,10 @@ public class GestioneAliquoteValidator {
     // Body, tipo operazione e scaglioni (né null né vuoti) li controlla Bean Validation prima del controller:
     // annotazioni su ModificaAliquoteDto e @Valid @NotNull sul parametro di IGestioneAliquoteService.salvaAliquote
 
-    // 2° passo, ramo INSERIMENTO: nessun id gruppo, decorrenza, ogni aliquota, continuità dei giorni.
+    // 2° passo, ramo INSERIMENTO: decorrenza, ogni aliquota, continuità dei giorni.
     // Che non esista già un gruppo modificabile lo controlla prima il controller (errore 403, non sui dati)
     public void validaInserimentoAliquote(ModificaAliquoteDto modificaAliquote) {
         List<String> errori = new ArrayList<>();
-        if (null != modificaAliquote.getIdGruppo()) {
-            errori.add(Constants.ErrorMessages.ID_GRUPPO_NON_AMMESSO);
-        }
         commonValidator.validaDataDecorrenza(modificaAliquote.getDataDecorrenza(), errori);
 
         // scaglioni non vuoti (@NotEmpty): tutte le aliquote vengono controllate; la continuità solo se i giorni di ognuna sono validi
@@ -71,20 +68,42 @@ public class GestioneAliquoteValidator {
         commonValidator.checkAndThrowIfErrors(errori);
     }
 
-    // 2° passo, ramo MODIFICA: id del gruppo presente, righe senza elementi vuoti (che l'elenco ci sia lo garantisce @NotEmpty).
+    // 3° passo, ramo INSERIMENTO: le nuove aliquote (già validate) non possono ripetere il gruppo precedente,
+    // letto dal controller (lista vuota = nessun gruppo precedente)
+    public void validaAliquoteDiverseDaPrecedenti(List<AliquotaModificaDto> aliquote, List<WTBAccertamentiAliquotaMora> gruppoPrecedente) {
+        List<String> errori = new ArrayList<>();
+        List<String> firmeNuove = aliquote.stream()
+                .map(aliquota -> commonValidator.firmaScaglione(aliquota.getValoreAliquota(), aliquota.getGiorniDa(), aliquota.getGiorniA()))
+                .toList();
+        List<String> firmePrecedenti = gruppoPrecedente.stream()
+                .map(aliquota -> commonValidator.firmaScaglione(aliquota.getAliquota(), aliquota.getGiorniRitardoDa(), aliquota.getGiorniRitardoA()))
+                .toList();
+        commonValidator.validaGruppoDiversoDaPrecedente(firmeNuove, firmePrecedenti,
+                Constants.ErrorMessages.ALIQUOTE_UGUALI_PRECEDENTI, errori);
+        commonValidator.checkAndThrowIfErrors(errori);
+    }
+
+    // 2° passo, ramo MODIFICA: almeno un'aliquota già salvata (da lì si ricava il gruppo), righe senza elementi vuoti.
     // Che contenga tutte le righe già salvate lo controlla validaModificaAliquote, col gruppo letto dal DB
     public void validaElencoModifica(ModificaAliquoteDto modificaAliquote) {
         List<String> errori = new ArrayList<>();
-        commonValidator.validaObbligatorio(modificaAliquote.getIdGruppo(), Constants.ErrorMessages.ID_GRUPPO_OBBLIGATORIO, errori);
         List<AliquotaModificaDto> aliquote = modificaAliquote.getScaglioni();
+        boolean isAliquotaSalvataPresente = false;
         for (int indice = 0; indice < aliquote.size(); indice++) {
-            commonValidator.validaObbligatorio(aliquote.get(indice),
+            AliquotaModificaDto aliquota = aliquote.get(indice);
+            boolean isPresente = commonValidator.validaObbligatorio(aliquota,
                     String.format(Constants.ErrorMessages.SCAGLIONE_VUOTO, NOME_ALIQUOTA_MAIUSCOLO, indice + 1), errori);
+            if (isPresente && null != aliquota.getIdAliquota()) {
+                isAliquotaSalvataPresente = true;
+            }
+        }
+        if (!isAliquotaSalvataPresente) {
+            errori.add(Constants.ErrorMessages.ALIQUOTA_SALVATA_OBBLIGATORIA);
         }
         commonValidator.checkAndThrowIfErrors(errori);
     }
 
-    // il gruppo (righe non cancellate con decorrenza ricavata dall'idGruppo) esiste ed è ancora modificabile.
+    // il gruppo (righe non cancellate con la decorrenza dell'aliquota salvata indicata) esiste ed è ancora modificabile.
     // Stessa regola di countAliquoteModificabili: decorrenza futura oppure almeno una riga inserita oggi
     public void validaGruppoModificabile(List<WTBAccertamentiAliquotaMora> gruppoSalvato, LocalDate dataInizioGruppo) {
         List<String> errori = new ArrayList<>();

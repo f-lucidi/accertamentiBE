@@ -16,6 +16,9 @@ public interface IConsultazioneImposteDao {
 
     WTBAccertamentiCategorieProd findCategoriaBySigla(String siglaCategoria);
 
+    // descrizione della categoria, null se la sigla non esiste
+    String findDescrizioneCategoria(String siglaCategoria);
+
     // anno facoltativo: se valorizzato restituisce solo i soggetti attivi in quell'anno
     List<WTBAccertamentiSoggettiV> findAllRagioneSocialeEPivaByCategoriaProdotto(String categoriaProdotto, Integer anno);
 

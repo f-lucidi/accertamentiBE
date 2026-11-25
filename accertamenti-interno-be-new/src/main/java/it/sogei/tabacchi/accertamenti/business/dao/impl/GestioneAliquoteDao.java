@@ -49,9 +49,9 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
         return builder
                 .addConditionsWhenValueIsNull(false)
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.flagCancella, false)
-                // decorrenza compresa tra Da e A
-                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
+                // validità che tocca almeno un giorno del periodo Da-A (come per l'anno)
                 .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataInizioValiditaA())
+                .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataFineVal, filtriGestioneParametriDto.getDataInizioValiditaDa())
                 // vigenti alla data: iniziate entro quel giorno e non ancora finite (la fine è l'ultimo giorno valido)
                 .addLessThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, filtriGestioneParametriDto.getDataRiferimento())
                 .addGreaterThanOrEqualToCondition(WTBAccertamentiAliquotaMora_.dataFineVal, filtriGestioneParametriDto.getDataRiferimento())
@@ -82,6 +82,11 @@ public class GestioneAliquoteDao implements IGestioneAliquoteDao {
                 .addEqualCondition(WTBAccertamentiAliquotaMora_.flagCancella, false)
                 .addLessThanCondition(WTBAccertamentiAliquotaMora_.dataInizioVal, dataDecorrenza)
                 .getSingleResult();
+    }
+
+    @Override
+    public WTBAccertamentiAliquotaMora findAliquotaById(Long id) {
+        return queryManager.findById(WTBAccertamentiAliquotaMora.class, id);
     }
 
     @Override

@@ -97,6 +97,16 @@ public class CommonValidator {
         return isPresente && isPositivo;
     }
 
+    // inserimento di un interesse (tardato pagamento o legale): un tasso nuovo non ha id e non può essere cancellato
+    public void validaNuovoInteresse(Long idInteresse, Boolean flagCancella, List<String> errori) {
+        if (null != idInteresse) {
+            errori.add(Constants.ErrorMessages.ID_INTERESSE_NON_AMMESSO);
+        }
+        if (Boolean.TRUE.equals(flagCancella)) {
+            errori.add(Constants.ErrorMessages.CANCELLAZIONE_INTERESSE_NON_AMMESSA);
+        }
+    }
+
     // nessuno dei valori è valorizzato (null, vuoto o di soli spazi)
     public void validaAlmenoUnoValorizzato(String messaggio, List<String> errori, String... valori) {
         boolean almenoUnoValorizzato = Arrays.stream(valori).anyMatch(valore -> null != valore && !valore.isBlank());
@@ -109,7 +119,7 @@ public class CommonValidator {
     // nomeScaglione/nomeScaglioni: Constants.GestioneParametri.NOME_* (minuscoli), finiscono nei messaggi.
     // numero parte da 1, come i riquadri "Aliquota N"/"Sanzione N" del frontend
 
-    // il gruppo salvato (righe con la decorrenza ricavata dall'idGruppo) esiste ed è ancora modificabile:
+    // il gruppo salvato (righe con la decorrenza della prima riga salvata della richiesta) esiste ed è ancora modificabile:
     // decorrenza futura oppure almeno una riga inserita oggi. dateInserimento = una per riga salvata, vuota se il gruppo non c'è
     public void  validaGruppoModificabile(List<LocalDate> dateInserimento, LocalDate dataInizioGruppo,
                                          String messaggioNonTrovato, String messaggioNonModificabile, List<String> errori) {
@@ -125,6 +135,20 @@ public class CommonValidator {
     // se ne mancasse una, cambiando la decorrenza resterebbe con la data vecchia
     public void validaGruppoCompleto(List<Long> idRichiesti, List<Long> idSalvati, String messaggio, List<String> errori) {
         if (idRichiesti.size() != idSalvati.size() || !idRichiesti.containsAll(idSalvati)) {
+            errori.add(messaggio);
+        }
+    }
+
+    // "firma" di una riga per il confronto tra gruppi: valore senza zeri finali (2.5 e 2.50 uguali) e giorni
+    public String firmaScaglione(BigDecimal valore, Integer giorniDa, Integer giorniA) {
+        return valore.stripTrailingZeros().toPlainString() + "|" + giorniDa + "|" + giorniA;
+    }
+
+    // in inserimento il nuovo gruppo non può ripetere il precedente: stesse righe nello stesso ordine.
+    // firmePrecedenti vuota = nessun gruppo precedente, nessun vincolo
+    public void validaGruppoDiversoDaPrecedente(List<String> firmeNuove, List<String> firmePrecedenti, String messaggio,
+                                                List<String> errori) {
+        if (!firmePrecedenti.isEmpty() && firmeNuove.equals(firmePrecedenti)) {
             errori.add(messaggio);
         }
     }

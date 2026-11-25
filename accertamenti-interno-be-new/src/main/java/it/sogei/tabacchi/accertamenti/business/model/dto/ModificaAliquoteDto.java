@@ -16,7 +16,6 @@ import java.util.List;
 public class ModificaAliquoteDto {
     @NotNull(message = Constants.ErrorMessages.TIPO_OPERAZIONE_OBBLIGATORIO)
     private TipoOperazione tipoOperazione;
-    private Integer idGruppo;                   // come arriva in AliquotaDto (es. 20270101); null in INSERIMENTO, obbligatorio in MODIFICA
     private LocalDate dataDecorrenza;           // yyyy-MM-dd
 
     // righe del gruppo, ognuna è un'aliquota; @NotEmpty = né null né lista vuota

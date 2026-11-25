@@ -2,6 +2,8 @@ package it.sogei.tabacchi.accertamenti.server.rest.impl;
 
 import it.sogei.tabacchi.accertamenti.business.controllers.interfaces.IConsultazioneImposteController;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ParametriFiltriRicercaDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
 import it.sogei.tabacchi.accertamenti.server.interceptors.LogMethodInvocation;
 import it.sogei.tabacchi.accertamenti.server.rest.AbstractService;
 import it.sogei.tabacchi.accertamenti.server.rest.interfaces.IConsultazioneImpostaService;
@@ -35,6 +37,11 @@ public class ConsultazioneImposteService extends AbstractService implements ICon
     @Override
     public Response findAllElencoPosizioni(String categoriaProdotto, Integer pagina, Integer elementiPerPagina,
                                            ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
-        return ok(consultazioneImposteController.findAllElencoPosizioni(categoriaProdotto, parametriFiltriRicercaDto, pagina, elementiPerPagina));
+        RisultatoPaginatoDto<PosizioneDto> posizioni = consultazioneImposteController.findAllElencoPosizioni(
+                categoriaProdotto, parametriFiltriRicercaDto, pagina, elementiPerPagina);
+        // il dettaglio si potrà aprire solo per le posizioni appena mostrate
+        setSessionAttribute(Constants.SessionKeys.LISTA_POSIZIONI,
+                posizioni.getData().stream().map(PosizioneDto::getIdPosizione).toList());
+        return ok(posizioni);
     }
 }

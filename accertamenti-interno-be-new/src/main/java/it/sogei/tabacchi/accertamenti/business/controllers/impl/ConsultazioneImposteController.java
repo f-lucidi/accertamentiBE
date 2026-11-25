@@ -44,8 +44,8 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
     @Override
     public String getDescrizioneCategoria(String categoriaProdotto) {
         validator.validaCategoriaProdotto(categoriaProdotto);
-        WTBAccertamentiCategorieProd categoria = consultazioneImposteDao.findCategoriaBySigla(categoriaProdotto);
-        return null != categoria ? categoria.getDescrizione() : Constants.CATEGORIA_PRODOTTO_NON_DISPONIBILE;
+        return Utility.getOrDefault(consultazioneImposteDao.findDescrizioneCategoria(categoriaProdotto),
+                Constants.CATEGORIA_PRODOTTO_NON_DISPONIBILE);
     }
 
     @Override
