@@ -25,7 +25,7 @@ public interface IGestioneParametriService {
     @Path(Constants.Endpoint.ANNI + "/{" + Constants.Parametri.TIPO_PARAMETRO + "}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Anni per il box di ricerca di un parametro",
-            description = "Anni distinti, dal più recente; le righe cancellate non contano.")
+            description = "Tutti gli anni dal più alto al più basso trovati, intermedi compresi; le righe cancellate non contano.")
     @APIResponses({
             @APIResponse(responseCode = "200", description = "Anni trovati (lista vuota se nessuno)",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,

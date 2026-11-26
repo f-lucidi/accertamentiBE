@@ -276,6 +276,8 @@ public class Constants {
 
         /* Gestione parametri - interessi legali (id, cancellazione e tasso usano i messaggi degli interessi) */
         public static final String DATI_INTERESSE_LEGALE_OBBLIGATORI = "I dati del tasso di interesse legale sono obbligatori.";
+        public static final String ANNO_INTERESSE_MAGGIORE_DI_2999 = "Il valore dell'anno in inserimento è troppo alto.";
+
         public static final String ANNO_INTERESSE_LEGALE_OBBLIGATORIO = "L'anno del tasso di interesse legale è obbligatorio.";
         public static final String ANNO_INTERESSE_LEGALE_GIA_PRESENTE = "Esiste già un tasso di interesse legale per l'anno %s.";
         public static final String INTERESSE_LEGALE_NON_TROVATO = "Tasso di interesse legale da modificare non trovato.";

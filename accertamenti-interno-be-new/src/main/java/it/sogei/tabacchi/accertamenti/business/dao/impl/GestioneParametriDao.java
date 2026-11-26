@@ -15,7 +15,8 @@ import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
-import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @ApplicationScoped
@@ -48,15 +49,15 @@ public class GestioneParametriDao implements IGestioneParametriDao {
         return toAnni(dateInizio);
     }
 
-    // l'anno è già una colonna: distinct e ordinamento li fa il DB
+    // l'anno è già una colonna: basta riempire gli anni intermedi
     @Override
     public List<Integer> findAnniInteressiLegali() {
-        return queryManager.createBuilder(WTBAccertamentiInteresseLegale.class)
+        List<Integer> anni = queryManager.createBuilder(WTBAccertamentiInteresseLegale.class)
                 .selectAttribute(WTBAccertamentiInteresseLegale_.annoValid)
                 .distinct()
                 .addEqualCondition(WTBAccertamentiInteresseLegale_.flagCancella, Constants.GestioneParametri.FLAG_CANCELLA_NO)
-                .orderByDesc(WTBAccertamentiInteresseLegale_.annoValid)
                 .getResultList();
+        return riempiAnniIntermedi(anni);
     }
 
     @Override
@@ -69,13 +70,25 @@ public class GestioneParametriDao implements IGestioneParametriDao {
         return toAnni(dateInizio);
     }
 
-    // date di decorrenza (già distinte dal DB) -> anni senza doppioni, dal più recente.
-    // Il distinct qui serve perché date diverse dello stesso anno (01/01/2027 e 01/02/2027) danno lo stesso anno
+    // date di decorrenza -> anni, poi lista completa dal più alto al più basso
     private List<Integer> toAnni(List<LocalDate> dateInizio) {
-        return dateInizio.stream()
+        List<Integer> anni = dateInizio.stream()
                 .map(LocalDate::getYear)
-                .distinct()
-                .sorted(Comparator.reverseOrder())
                 .toList();
+        return riempiAnniIntermedi(anni);
+    }
+
+    // dall'anno più alto al più basso, compresi gli anni che nel DB non ci sono
+    private List<Integer> riempiAnniIntermedi(List<Integer> anni) {
+        if (anni.isEmpty()) {
+            return List.of();
+        }
+        int annoPiuAlto = Collections.max(anni);
+        int annoPiuBasso = Collections.min(anni);
+        List<Integer> anniCompleti = new ArrayList<>();
+        for (int anno = annoPiuAlto; anno >= annoPiuBasso; anno--) {
+            anniCompleti.add(anno);
+        }
+        return anniCompleti;
     }
 }

@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface IGestioneParametriController {
 
-    // anni distinti del parametro, dal più recente; lista vuota se non ci sono righe
+    // anni del parametro dal più alto al più basso, intermedi compresi; lista vuota se non ci sono righe
     List<Integer> findAnni(TipoParametro tipoParametro);
 }

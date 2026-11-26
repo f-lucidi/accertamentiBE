@@ -2,7 +2,7 @@ package it.sogei.tabacchi.accertamenti.business.dao.interfaces;
 
 import java.util.List;
 
-// anni per il box di ricerca dei parametri storicizzati: distinti, dal più recente
+// anni per il box di ricerca dei parametri storicizzati: dal più alto al più basso, intermedi compresi
 public interface IGestioneParametriDao {
 
     // anni di decorrenza delle aliquote di mora non cancellate

@@ -35,6 +35,7 @@ public class GestioneInteressiLegaliValidator {
         commonValidator.validaNuovoInteresse(modificaInteresseLegaleDto.getIdInteresse(), modificaInteresseLegaleDto.getFlagCancella(), errori);
         commonValidator.validaObbligatorio(modificaInteresseLegaleDto.getAnno(), Constants.ErrorMessages.ANNO_INTERESSE_LEGALE_OBBLIGATORIO, errori);
         commonValidator.validaTasso(modificaInteresseLegaleDto.getTassoInteresseLegale(), errori);
+        if (modificaInteresseLegaleDto.getAnno() > 2999) errori.add(Constants.ErrorMessages.ANNO_INTERESSE_MAGGIORE_DI_2999);
         commonValidator.checkAndThrowIfErrors(errori);
     }
 
