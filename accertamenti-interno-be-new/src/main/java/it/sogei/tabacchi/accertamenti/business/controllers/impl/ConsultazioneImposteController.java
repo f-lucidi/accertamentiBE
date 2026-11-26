@@ -6,10 +6,16 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ListeFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ParametriFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.esportazione.EsportazionePosizioneDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.esportazione.EsportazioneVersamentoDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiDettaglioImposte;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiInteressiLegaliPerAnno;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiSoggettiV;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiTipoPagamento;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiVersMoreInteressiSanzioniV;
 import it.sogei.tabacchi.accertamenti.business.model.records.CriteriRicercaPosizioni;
 import it.sogei.tabacchi.accertamenti.business.validation.ConsultazioneImposteValidator;
 import it.sogei.tabacchi.accertamenti.mappers.CustomMapper;
@@ -20,7 +26,13 @@ import it.sogei.tabacchi.accertamenti.utility.Utility;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RequestScoped
 @LogMethodInvocation(logParameters = false)
@@ -78,6 +90,140 @@ public class ConsultazioneImposteController implements IConsultazioneImposteCont
         // ogni posizione -> DTO completo (vedi popolaPosizione)
         List<PosizioneDto> posizioniDto = posizioni.stream().map(this::popolaPosizione).toList();
         return RisultatoPaginatoDto.of(posizioniDto, totaleElementi, pagina, elementiPerPagina);
+    }
+
+    // ------------ ESPORTAZIONE EXCEL ------------
+    // 5 query fisse (vedi DAO); qui i risultati vengono agganciati alle posizioni con delle mappe
+
+    @Override
+    public List<EsportazionePosizioneDto> esportaElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
+        // stessa validazione e stessi filtri della ricerca: l'Excel contiene le posizioni che l'utente vede
+        validator.validaFiltriRicerca(categoriaProdotto, parametriFiltriRicercaDto);
+        String sigla = risolviSiglaCategoria(categoriaProdotto);
+        CriteriRicercaPosizioni criteri = toCriteriRicerca(sigla, parametriFiltriRicercaDto);
+        validator.validaCriteriRicerca(criteri);
+
+        List<WTBAccertamentiElencoPosizioni> posizioni = consultazioneImposteDao.findPosizioniDaEsportare(criteri);
+        if (posizioni.isEmpty()) {
+            return List.of();
+        }
+        List<Long> listaIdPosizioni = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getId).toList();
+        List<String> listaCfSoggetti = posizioni.stream().map(WTBAccertamentiElencoPosizioni::getCfSogObbligato).distinct().toList();
+
+        // soggetto per CF: se la vista avesse due righe per lo stesso CF vince la prima
+        Map<String, WTBAccertamentiSoggettiV> soggettiPerCf = consultazioneImposteDao.findSoggettiPerEsportazione(sigla, listaCfSoggetti)
+                .stream()
+                .collect(Collectors.toMap(WTBAccertamentiSoggettiV::getCfPiva, soggetto -> soggetto, (primo, secondo) -> primo));
+        // interessi legali e imposte versate hanno già l'ID della posizione
+        Map<Long, List<WTBAccertamentiInteressiLegaliPerAnno>> interessiLegaliPerPosizione =
+                consultazioneImposteDao.findInteressiLegaliPerEsportazione(listaIdPosizioni)
+                        .stream()
+                        .collect(Collectors.groupingBy(WTBAccertamentiInteressiLegaliPerAnno::getIdPosizione));
+        Map<Long, List<WTBAccertamentiDettaglioImposte>> imposteVersatePerPosizione =
+                consultazioneImposteDao.findImposteVersatePerEsportazione(listaIdPosizioni)
+                        .stream()
+                        .collect(Collectors.groupingBy(WTBAccertamentiDettaglioImposte::getIdPosizione));
+        // la vista dei versamenti non ha l'ID: si aggancia per cf + anno + mese + quindicina
+        Map<String, List<WTBAccertamentiVersMoreInteressiSanzioniV>> versamentiAccessoriPerPeriodo =
+                consultazioneImposteDao.findVersamentiAccessoriPerEsportazione(criteri)
+                        .stream()
+                        .collect(Collectors.groupingBy(versamento -> chiavePeriodo(versamento.getCfSogObbligato(),
+                                versamento.getAnno(), versamento.getMese(), versamento.getNumQuindicina())));
+
+        // l'ordine delle posizioni resta quello della query (anno, mese, quindicina, id)
+        return posizioni.stream()
+                .map(posizione -> componiPosizioneDaEsportare(posizione, soggettiPerCf, interessiLegaliPerPosizione,
+                        imposteVersatePerPosizione, versamentiAccessoriPerPeriodo))
+                .toList();
+    }
+
+    // chiave che identifica il periodo di un soggetto, es. "06741351008|2026|3|2"
+    private String chiavePeriodo(String cfSogObbligato, Integer anno, Integer mese, Integer numQuindicina) {
+        return cfSogObbligato + "|" + anno + "|" + mese + "|" + numQuindicina;
+    }
+
+    private EsportazionePosizioneDto componiPosizioneDaEsportare(
+            WTBAccertamentiElencoPosizioni posizione,
+            Map<String, WTBAccertamentiSoggettiV> soggettiPerCf,
+            Map<Long, List<WTBAccertamentiInteressiLegaliPerAnno>> interessiLegaliPerPosizione,
+            Map<Long, List<WTBAccertamentiDettaglioImposte>> imposteVersatePerPosizione,
+            Map<String, List<WTBAccertamentiVersMoreInteressiSanzioniV>> versamentiAccessoriPerPeriodo) {
+        EsportazionePosizioneDto posizioneDto = new EsportazionePosizioneDto();
+        posizioneDto.setIdPosizione(posizione.getId());
+        posizioneDto.setPartitaIva(posizione.getCfSogObbligato());
+        posizioneDto.setAnnoContabile(posizione.getAnno());
+        posizioneDto.setPeriodoContabile(Utility.formattaPeriodoContabile(posizione.getTipoPeriodo(),
+                posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina()));
+        posizioneDto.setImpostaDovuta(posizione.getImpostaTotaleDovuto());
+        posizioneDto.setImpostaRestante(posizione.getImpostaRestanteDaPagare());
+        posizioneDto.setMoraDovuta(posizione.getMoraTotaleDovuto());
+        posizioneDto.setMoraRestante(posizione.getMoraRestanteDaPagare());
+        posizioneDto.setInteressiTardatoPagamentoDovuti(posizione.getInteresseTardatoPagamentoTotaleDovuto());
+        posizioneDto.setInteressiTardatoPagamentoRestanti(posizione.getInteresseTardatoPagamentoRestanteDaPagare());
+        posizioneDto.setSanzioneDovuta(posizione.getSanzioneTotaleDovuto());
+        posizioneDto.setSanzioneRestante(posizione.getSanzioneRestanteDaPagare());
+
+        // soggetto: se manca, ragione sociale di default e date vuote
+        WTBAccertamentiSoggettiV soggetto = soggettiPerCf.get(posizione.getCfSogObbligato());
+        if (null != soggetto) {
+            posizioneDto.setRagioneSociale(soggetto.getDenominazione());
+            posizioneDto.setDataAttivazione(soggetto.getDataInizioAutorizzazione());
+            // la data di fine "segnaposto" (soggetto ancora attivo) diventa null
+            posizioneDto.setDataCessazione(Utility.fineValiditaVisibile(soggetto.getDataFineAutorizzazione()));
+        } else {
+            posizioneDto.setRagioneSociale(Constants.RAGIONE_SOCIALE_NON_DISPONIBILE);
+        }
+
+        // interessi legali: dovuti = tutti gli anni, restanti = solo quelli non pagati (le due SUM del collega)
+        List<WTBAccertamentiInteressiLegaliPerAnno> interessiLegali =
+                interessiLegaliPerPosizione.getOrDefault(posizione.getId(), List.of());
+        List<WTBAccertamentiInteressiLegaliPerAnno> interessiLegaliNonPagati = interessiLegali.stream()
+                .filter(interesse -> !Constants.INTERESSE_LEGALE_PAGATO.equals(interesse.getStatoPagamentoInteresseLegale()))
+                .toList();
+        posizioneDto.setInteressiLegaliDovuti(sommaInteressiLegali(interessiLegali));
+        posizioneDto.setInteressiLegaliRestanti(sommaInteressiLegali(interessiLegaliNonPagati));
+
+        posizioneDto.setVersamenti(componiVersamenti(posizione, imposteVersatePerPosizione, versamentiAccessoriPerPeriodo));
+        return posizioneDto;
+    }
+
+    // imposte versate + mora/interessi/sanzioni dello stesso periodo, dal pagamento più vecchio
+    private List<EsportazioneVersamentoDto> componiVersamenti(
+            WTBAccertamentiElencoPosizioni posizione,
+            Map<Long, List<WTBAccertamentiDettaglioImposte>> imposteVersatePerPosizione,
+            Map<String, List<WTBAccertamentiVersMoreInteressiSanzioniV>> versamentiAccessoriPerPeriodo) {
+        List<EsportazioneVersamentoDto> versamenti = new ArrayList<>();
+
+        for (WTBAccertamentiDettaglioImposte imposta : imposteVersatePerPosizione.getOrDefault(posizione.getId(), List.of())) {
+            EsportazioneVersamentoDto versamento = new EsportazioneVersamentoDto();
+            versamento.setTipo(Constants.Dettaglio.TIPO_VERSAMENTO_IMPOSTA);
+            versamento.setImporto(imposta.getImpostaImportoParziale());
+            versamento.setDataPagamento(imposta.getDataPagamento());
+            versamento.setGiorniRitardo(imposta.getGiorniRitardo());
+            versamenti.add(versamento);
+        }
+
+        String chiave = chiavePeriodo(posizione.getCfSogObbligato(), posizione.getAnno(), posizione.getMese(), posizione.getNumQuindicina());
+        for (WTBAccertamentiVersMoreInteressiSanzioniV accessorio : versamentiAccessoriPerPeriodo.getOrDefault(chiave, List.of())) {
+            EsportazioneVersamentoDto versamento = new EsportazioneVersamentoDto();
+            versamento.setTipo(accessorio.getTipo());
+            versamento.setImporto(accessorio.getImporto());
+            versamento.setDataPagamento(accessorio.getDataPagamento());
+            versamenti.add(versamento);
+        }
+
+        // stesso ordine del collega (ORDER BY vers.DATA_PAGAMENTO); eventuali date null in fondo
+        versamenti.sort(Comparator.comparing(EsportazioneVersamentoDto::getDataPagamento,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        return versamenti;
+    }
+
+    // somma degli importi (quelli null non contano), partendo da zero
+    private BigDecimal sommaInteressiLegali(List<WTBAccertamentiInteressiLegaliPerAnno> interessiLegali) {
+        return interessiLegali.stream()
+                .map(WTBAccertamentiInteressiLegaliPerAnno::getInteresseLegale)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // converte i filtri ricevuti come stringhe nei tipi usati dalla query: stringhe vuote -> null (filtro non applicato),

@@ -44,4 +44,11 @@ public class ConsultazioneImposteService extends AbstractService implements ICon
                 posizioni.getData().stream().map(PosizioneDto::getIdPosizione).toList());
         return ok(posizioni);
     }
+
+    @Override
+    public Response esportaElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto) {
+        // a differenza della lista, qui non si aggiorna LISTA_POSIZIONI in sessione:
+        // l'export non deve cambiare quali dettagli l'utente può aprire
+        return ok(consultazioneImposteController.esportaElencoPosizioni(categoriaProdotto, parametriFiltriRicercaDto));
+    }
 }

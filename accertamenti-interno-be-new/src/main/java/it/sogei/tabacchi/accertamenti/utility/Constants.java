@@ -79,6 +79,8 @@ public class Constants {
         // la mora si applica dal primo giorno di ritardo
         public static final Integer GIORNO_MINIMO_PER_MORA = 1;
 
+        // tipo dei versamenti d'imposta (non sta nella vista: lo assegniamo noi, come il collega)
+        public static final String TIPO_VERSAMENTO_IMPOSTA = "IMPOSTA";
         // colonna TIPO di W_TB_ACCERTAMENTI_VERS_MORE_INTERESSI_SANZIONI_V
         public static final String TIPO_VERSAMENTO_MORA = "MORA";
         public static final String TIPO_VERSAMENTO_INTERESSE = "INTERESSI";
@@ -140,6 +142,7 @@ public class Constants {
         public static final String CONSULTAZIONE_IMPOSTE = "/consultazione-imposte";
         /* Lista Posizioni */
         public static final String LISTA_POSIZIONI = "/lista-posizioni";
+        public static final String ESPORTA_ELENCO_POSIZIONI = "/esporta-elenco-posizioni";
         /* Dettaglio posizione */
         public static final String DETTAGLIO = "/dettaglio";
         public static final String PARAMETRO_ID_POSIZIONE = "/{" + Parametri.ID_POSIZIONE + "}";

@@ -7,6 +7,8 @@ import it.sogei.tabacchi.accertamenti.business.model.records.CriteriRicercaPosiz
 import it.sogei.tabacchi.accertamenti.business.model.dto.PeriodoContabileDto;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiCategorieProd_;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiDettaglioImposte;
+import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiDettaglioImposte_;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiElencoPosizioni_;
 import it.sogei.tabacchi.accertamenti.business.model.entity.WTBAccertamentiInteressiLegaliPerAnno;
@@ -311,5 +313,109 @@ public class ConsultazioneImposteDao implements IConsultazioneImposteDao {
                 .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.mese, mese)
                 .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.numQuindicina, numQuindicina)
                 .getSingleResult();
+    }
+
+    // ------------ ESPORTAZIONE EXCEL ELENCO POSIZIONI ------------
+    //
+    // La query nativa del collega (UNION ALL + GROUP BY + join senza relazione JPA) qui diventa
+    // 5 query fisse, qualunque sia il numero di posizioni. Il controller unisce i risultati in Java.
+
+    // Oracle accetta al massimo 1000 valori dentro una IN
+    private static final int MASSIMO_VALORI_IN = 1000;
+
+    // 1) Le posizioni: stessi filtri della ricerca, ma tutte (niente paginazione) e nell'ordine del report
+    //   SELECT * FROM W_TB_ACCERTAMENTI_ELENCO_POSIZIONI p WHERE <filtri della ricerca>
+    //   ORDER BY p.ANNO, p.MESE, p.NUM_QUINDICINA, p.ID
+    @Override
+    public List<WTBAccertamentiElencoPosizioni> findPosizioniDaEsportare(CriteriRicercaPosizioni criteri) {
+        return applicaFiltriElencoPosizioni(queryManager.createBuilder(WTBAccertamentiElencoPosizioni.class), criteri)
+                .orderByAsc(WTBAccertamentiElencoPosizioni_.anno)
+                .orderByAsc(WTBAccertamentiElencoPosizioni_.mese)
+                .orderByAsc(WTBAccertamentiElencoPosizioni_.numQuindicina)
+                .orderByAsc(WTBAccertamentiElencoPosizioni_.id)
+                .getResultList();
+    }
+
+    // 2) I soggetti delle posizioni (ragione sociale e date di autorizzazione)
+    //   SELECT * FROM W_TB_ACCERTAMENTI_SOGGETTI_V WHERE CATEGORIA = :sigla AND CF_PIVA IN (:listaCf)
+    @Override
+    public List<WTBAccertamentiSoggettiV> findSoggettiPerEsportazione(String categoria, List<String> listaCfSoggetti) {
+        List<WTBAccertamentiSoggettiV> soggetti = new ArrayList<>();
+        for (List<String> bloccoCf : dividiInBlocchi(listaCfSoggetti)) {
+            List<WTBAccertamentiSoggettiV> soggettiDelBlocco = queryManager.createBuilder(WTBAccertamentiSoggettiV.class)
+                    .addEqualCondition(WTBAccertamentiSoggettiV_.categoria, categoria)
+                    .addInCondition(WTBAccertamentiSoggettiV_.cfPiva, bloccoCf)
+                    .getResultList();
+            soggetti.addAll(soggettiDelBlocco);
+        }
+        return soggetti;
+    }
+
+    // 3) Gli interessi legali per anno delle posizioni (le somme dovuti/restanti le fa il controller)
+    //   SELECT * FROM W_TB_ACCERTAMENTI_INTERESSI_LEGALI_PER_ANNO WHERE ID_POSIZIONE IN (:listaId)
+    @Override
+    public List<WTBAccertamentiInteressiLegaliPerAnno> findInteressiLegaliPerEsportazione(List<Long> listaIdPosizioni) {
+        List<WTBAccertamentiInteressiLegaliPerAnno> interessiLegali = new ArrayList<>();
+        for (List<Long> bloccoId : dividiInBlocchi(listaIdPosizioni)) {
+            List<WTBAccertamentiInteressiLegaliPerAnno> interessiDelBlocco = queryManager.createBuilder(WTBAccertamentiInteressiLegaliPerAnno.class)
+                    .addInCondition(WTBAccertamentiInteressiLegaliPerAnno_.idPosizione, bloccoId)
+                    .getResultList();
+            interessiLegali.addAll(interessiDelBlocco);
+        }
+        return interessiLegali;
+    }
+
+    // 4) Le imposte versate delle posizioni (prima metà della UNION ALL del collega)
+    //   SELECT * FROM W_TB_ACCERTAMENTI_DETTAGLIO_IMPOSTE
+    //   WHERE ID_POSIZIONE IN (:listaId) AND STATO_IMPORTO_PARZIALE <> '2'   -- '2' = mancante
+    //   ORDER BY DATA_PAGAMENTO
+    @Override
+    public List<WTBAccertamentiDettaglioImposte> findImposteVersatePerEsportazione(List<Long> listaIdPosizioni) {
+        List<WTBAccertamentiDettaglioImposte> imposteVersate = new ArrayList<>();
+        for (List<Long> bloccoId : dividiInBlocchi(listaIdPosizioni)) {
+            List<WTBAccertamentiDettaglioImposte> imposteDelBlocco = queryManager.createBuilder(WTBAccertamentiDettaglioImposte.class)
+                    .addInCondition(WTBAccertamentiDettaglioImposte_.idPosizione, bloccoId)
+                    .addNotEqualCondition(WTBAccertamentiDettaglioImposte_.statoImportoParziale, Constants.Dettaglio.STATO_IMPORTO_MANCANTE)
+                    .orderByAsc(WTBAccertamentiDettaglioImposte_.dataPagamento)
+                    .getResultList();
+            imposteVersate.addAll(imposteDelBlocco);
+        }
+        return imposteVersate;
+    }
+
+    // 5) Mora, interessi, interessi legali e sanzioni versati (seconda metà della UNION ALL).
+    // La vista non ha ID_POSIZIONE: il controller li aggancia alla posizione con cf + anno + mese + quindicina
+    //   SELECT * FROM W_TB_ACCERTAMENTI_VERS_MORE_INTERESSI_SANZIONI_V
+    //   WHERE CATEGORIA = :sigla AND ANNO = :anno [AND CF_SOG_OBBLIGATO = :partitaIva]
+    //     AND TIPO IN ('MORA', 'INTERESSI', 'INTERESSI_LEGALI', 'SANZIONI') AND DATA_PAGAMENTO IS NOT NULL
+    //   ORDER BY DATA_PAGAMENTO
+    @Override
+    public List<WTBAccertamentiVersMoreInteressiSanzioniV> findVersamentiAccessoriPerEsportazione(CriteriRicercaPosizioni criteri) {
+        List<String> tipiVersamento = List.of(
+                Constants.Dettaglio.TIPO_VERSAMENTO_MORA,
+                Constants.Dettaglio.TIPO_VERSAMENTO_INTERESSE,
+                Constants.Dettaglio.TIPO_VERSAMENTO_INTERESSI_LEGALI,
+                Constants.Dettaglio.TIPO_VERSAMENTO_SANZIONE);
+        return queryManager.createBuilder(WTBAccertamentiVersMoreInteressiSanzioniV.class)
+                // la P.IVA è facoltativa: se è null la condizione viene saltata
+                .addConditionsWhenValueIsNull(false)
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.categoria, criteri.categoria())
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.anno, criteri.anno())
+                .addEqualCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.cfSogObbligato, criteri.partitaIva())
+                .addInCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.tipo, tipiVersamento)
+                .addIsNotNullCondition(WTBAccertamentiVersMoreInteressiSanzioniV_.dataPagamento)
+                .orderByAsc(WTBAccertamentiVersMoreInteressiSanzioniV_.dataPagamento)
+                .getResultList();
+    }
+
+    // spezza la lista in blocchi da massimo 1000 valori, uno per ogni query con la IN.
+    // Lista vuota = nessun blocco = nessuna query (una "IN ()" vuota darebbe errore su Oracle)
+    private <V> List<List<V>> dividiInBlocchi(List<V> valori) {
+        List<List<V>> blocchi = new ArrayList<>();
+        for (int inizio = 0; inizio < valori.size(); inizio += MASSIMO_VALORI_IN) {
+            int fine = Math.min(inizio + MASSIMO_VALORI_IN, valori.size());
+            blocchi.add(valori.subList(inizio, fine));
+        }
+        return blocchi;
     }
 }

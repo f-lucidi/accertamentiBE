@@ -3,6 +3,7 @@ package it.sogei.tabacchi.accertamenti.server.rest.interfaces;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ListeFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ParametriFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.esportazione.EsportazionePosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 import it.sogei.tabacchi.accertamenti.utility.Constants;
 import jakarta.validation.Valid;
@@ -96,6 +97,27 @@ public interface IConsultazioneImpostaService {
             @Parameter(description = "Elementi per pagina; se assente o < 1 usa il default (10), massimo 100", example = "10")
             @QueryParam(Constants.Parametri.ELEMENTI_PER_PAGINA) Integer elementiPerPagina,
             @RequestBody(description = "Filtri di ricerca; i campi non valorizzati vengono ignorati", required = true)
+            @Valid @NotNull(message = Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI)
+            ParametriFiltriRicercaDto parametriFiltriRicercaDto);
+
+    @POST
+    @Path(Constants.Endpoint.ESPORTA_ELENCO_POSIZIONI + "/{" + Constants.Parametri.CATEGORIA_PRODOTTO + "}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Dati per l'export Excel dell'elenco posizioni",
+            description = "Stessi filtri della lista posizioni, ma senza paginazione: tutte le posizioni trovate "
+                    + "con i loro versamenti. Il file Excel lo genera il frontend.")
+    @APIResponses({
+            @APIResponse(responseCode = "200", description = "Posizioni da esportare (lista vuota se nessuna)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(type = SchemaType.ARRAY, implementation = EsportazionePosizioneDto.class))),
+            @APIResponse(responseCode = "400", description = "Parametri non validi"),
+            @APIResponse(responseCode = "401", description = "Utente non autenticato")
+    })
+    Response esportaElencoPosizioni(
+            @Parameter(description = "Sigla della categoria prodotto", required = true, example = "PLI")
+            @PathParam(Constants.Parametri.CATEGORIA_PRODOTTO) String categoriaProdotto,
+            @RequestBody(description = "Filtri di ricerca, gli stessi della lista posizioni", required = true)
             @Valid @NotNull(message = Constants.ErrorMessages.FILTRI_RICERCA_OBBLIGATORI)
             ParametriFiltriRicercaDto parametriFiltriRicercaDto);
 }

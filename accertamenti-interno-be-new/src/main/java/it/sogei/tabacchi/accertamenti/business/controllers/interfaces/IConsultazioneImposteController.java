@@ -4,6 +4,7 @@ import it.sogei.tabacchi.accertamenti.business.model.dto.ListeFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.ParametriFiltriRicercaDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.PosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.RisultatoPaginatoDto;
+import it.sogei.tabacchi.accertamenti.business.model.dto.esportazione.EsportazionePosizioneDto;
 import it.sogei.tabacchi.accertamenti.business.model.dto.tipologiche.CategoriaProdottoDto;
 
 import java.util.List;
@@ -18,4 +19,7 @@ public interface IConsultazioneImposteController {
 
     RisultatoPaginatoDto<PosizioneDto> findAllElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto,
                                                               Integer pagina, Integer elementiPerPagina);
+
+    // tutte le posizioni della ricerca (senza paginazione) con i loro versamenti, per l'export Excel del FE
+    List<EsportazionePosizioneDto> esportaElencoPosizioni(String categoriaProdotto, ParametriFiltriRicercaDto parametriFiltriRicercaDto);
 }
